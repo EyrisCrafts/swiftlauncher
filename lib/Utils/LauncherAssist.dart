@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:swiftlauncher/Global.dart';
+import 'package:swiftlauncher/Models/IconPack.dart';
 
 class LauncherAssist {
   static const MethodChannel _channel = const MethodChannel('launcher_assist');
@@ -30,6 +31,34 @@ class LauncherAssist {
   static void launchApp(AppInfo packageName) {
     Global.recentApps.add(packageName);
     _channel.invokeMethod("launchApp", {"packageName": packageName.package});
+  }
+
+  static Future<List<IconPack>> getIconPacks() async {
+    String str = await _channel.invokeMethod("getIconPacks", {});
+    List<IconPack> packs = List();
+    str.split('\n').forEach((element) {
+      if (element.length != 0) {
+        packs.add(IconPack(
+            name: element.split(',')[0], packageName: element.split(',')[1]));
+      }
+    });
+    return packs;
+  }
+
+  static Future<Uint8List> loadIcon(String iconpack, String iconPackage) async {
+    Uint8List data = await _channel
+        .invokeMethod("getIcon", {"pckg": iconPackage, "key": iconpack});
+    return data;
+  }
+
+  static Future<void> loadIconPack(
+      String iconPackage, List<String> listOfApps) async {
+    listOfApps.forEach((element) async {
+      Uint8List data = await _channel
+          .invokeMethod("getIcon", {"pckg": iconPackage, "key": element});
+      if (data != null) Global.iconPack.addEntries([MapEntry(element, data)]);
+    });
+    return;
   }
 
   static void launchAppSetting(AppInfo packageName) {

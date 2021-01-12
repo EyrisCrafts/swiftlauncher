@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 import android.net.Uri;
+import android.graphics.Bitmap;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "launcher_assist";
@@ -61,11 +62,44 @@ public class MainActivity extends FlutterActivity {
                             }
                              else if (call.method.equals("openSetting")){
                                 openSetting(call.argument("package").toString());
+                            } else if (call.method.equals("getIconPacks")){
+                                getIconPacks(result);
+                            }
+                            else if (call.method.equals("getIcon")){
+                                getIconFromPack(result,call.argument("pckg").toString(),call.argument("key").toString());
                             }
                         }
                 );
     }
     
+    //TODO GET ICON FROM PACK THAT IS GIVEN
+    private void getIconFromPack(MethodChannel.Result result, String packageName, String key){
+        IconPackManager manager = new IconPackManager();
+        manager.setContext(getApplication());
+        HashMap<String, IconPackManager.IconPack> map = manager.getAvailableIconPacks(false);
+        IconPackManager.IconPack pack = map.get(packageName);
+        pack.load();
+        Bitmap bitmap = pack.getIconForPackage(key, null);
+        if (bitmap == null){
+            result.success(null);
+        }else{
+           
+            result.success(convertToBytes(bitmap,Bitmap.CompressFormat.PNG, 100));
+        }
+    }
+
+    private void  getIconPacks(MethodChannel.Result result){
+        IconPackManager manager = new IconPackManager();
+        manager.setContext(getApplication());
+        HashMap<String, IconPackManager.IconPack> map = manager.getAvailableIconPacks(true);
+        String toSend = "";
+        for(String key : map.keySet()){
+            toSend+=map.get(key).name+","+map.get(key).packageName+"\n";
+        }
+        result.success(toSend);
+    }
+
+
     private void openSetting(String packageName){
         Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.parse("package:" + packageName));

@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:swiftlauncher/widgets/SearchAppIcon.dart';
@@ -19,9 +20,11 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
+List<AppInfo> allApps;
+Map<String, Uint8List> iconPack;
+
 class _MainScreenState extends State<MainScreen> {
   var wallpaper;
-  List<AppInfo> allApps;
   bool isSearchMode;
   List<AppInfo> mainApps;
   List<AppInfo> filteredApps;
@@ -32,9 +35,12 @@ class _MainScreenState extends State<MainScreen> {
   FocusNode _searchFocus;
   int numberOfPages;
   List<AppInfo> drawerApps;
+  bool draggingFromDrawer;
   @override
   void initState() {
     super.initState();
+    iconPack = Map();
+    draggingFromDrawer = false;
     _searchController = TextEditingController();
     _searchFocus = FocusNode();
     drawerKey = GlobalKey<AppDrawerState>();
@@ -48,23 +54,32 @@ class _MainScreenState extends State<MainScreen> {
     isSearchMode = false;
     initializeApps().then((value) {
       log("apps loaded");
-      initializeMainApps();
       loadDrawerSettings();
+      initializeMainApps();
     });
   }
 
   loadDrawerSettings() {
     //TODO Load from prefs
+
     numberOfPages = (allApps.length / 20).ceil();
-    for (int index = 0; index < numberOfPages; index++) {
-      drawerApps.addAll(allApps
-          .getRange(
-              index * 20,
-              ((index + 1) * 20) > allApps.length
-                  ? allApps.length - 1
-                  : ((index + 1) * 20))
-          .toList());
+    drawerApps.addAll(allApps);
+    int diff = (numberOfPages * 20) - drawerApps.length;
+    for (int i = 0; i < diff; i++) {
+      drawerApps.add(null);
     }
+    drawerKey.currentState.setDrawer(numberOfPages, drawerApps);
+
+    // for (int index = 0; index < numberOfPages; index++) {
+    //   drawerApps.addAll(allApps
+    //       .getRange(
+    //           index * 20,
+    //           ((index + 1) * 20) > allApps.length
+    //               ? allApps.length - 1
+    //               : ((index + 1) * 20))
+    //       .toList());
+    // }
+    log("drawer apps ${drawerApps.length}");
   }
 
   initializeMainApps() {
@@ -94,7 +109,6 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> initializeApps() async {
     allApps = await LauncherAssist.getAllApps();
-    setState(() {});
   }
 
   setupWallpaper() async {
@@ -150,6 +164,10 @@ class _MainScreenState extends State<MainScreen> {
             }
           },
           child: AppDrawer(
+            draggingApp: (index) {
+              draggingFromDrawer = true;
+              draggingAppIndex = index;
+            },
             numberOfPages: numberOfPages,
             apps: allApps,
             key: drawerKey,
@@ -207,21 +225,24 @@ class _MainScreenState extends State<MainScreen> {
                                                   builder: (context) =>
                                                       AppSettingDialog(
                                                         onAppSetting: () {
-                                                          LauncherAssist
-                                                              .launchAppSetting(
-                                                                  mainApps[
+                                                          LauncherAssist.launchAppSetting(
+                                                              draggingFromDrawer
+                                                                  ? drawerApps[
+                                                                      draggingAppIndex]
+                                                                  : mainApps[
                                                                       draggingAppIndex]);
                                                         },
                                                         onRemoveIcon: () {
                                                           Navigator.pop(
                                                               context);
-                                                          setState(() {
-                                                            mainApps.removeAt(
-                                                                draggingAppIndex);
-                                                            mainApps.insert(
-                                                                draggingAppIndex,
-                                                                null);
-                                                          });
+                                                          if (!draggingFromDrawer)
+                                                            setState(() {
+                                                              mainApps.removeAt(
+                                                                  draggingAppIndex);
+                                                              mainApps.insert(
+                                                                  draggingAppIndex,
+                                                                  null);
+                                                            });
                                                         },
                                                       ));
                                             },
@@ -287,8 +308,7 @@ class _MainScreenState extends State<MainScreen> {
                                                     // if empty place
                                                     if (mainApps[index] ==
                                                             null &&
-                                                        draggingAppIndex !=
-                                                            -1) {
+                                                        !draggingFromDrawer) {
                                                       swapPlaces(
                                                           draggingAppIndex,
                                                           index);
@@ -296,9 +316,12 @@ class _MainScreenState extends State<MainScreen> {
                                                     } else if (mainApps[
                                                                 index] ==
                                                             null &&
-                                                        draggingAppIndex ==
-                                                            -1) {
+                                                        draggingFromDrawer &&
+                                                        drawerApps[
+                                                                draggingAppIndex] !=
+                                                            null) {
                                                       //coming from drawer
+                                                      //TODO Update the drawer apps list arrangement
                                                       setState(() {
                                                         mainApps[index] = app;
                                                       });
@@ -307,6 +330,9 @@ class _MainScreenState extends State<MainScreen> {
                                                   () {
                                                     // Drag started
                                                     //TODO cross visible
+                                                    if (draggingFromDrawer)
+                                                      draggingFromDrawer =
+                                                          false;
                                                     setState(() {
                                                       isRemoveAppVis = true;
                                                     });

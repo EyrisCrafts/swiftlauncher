@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
+import 'package:swiftlauncher/screens/Settings/SettingScreen.dart';
 import 'package:swiftlauncher/widgets/BaseDraggableApp.dart';
 import 'package:swiftlauncher/widgets/CustomDrawer.dart';
 
@@ -12,6 +13,7 @@ class AppDrawer extends StatefulWidget {
   final Widget child;
   final List<AppInfo> apps;
   final int numberOfPages;
+  final Function(int) draggingApp;
   final Function(DragEndDetails) onVerticalDragEnd;
   final Function(DragUpdateDetails) onVerticalDragUpdate;
   final Function(int numberOfPages) pagesChange;
@@ -23,7 +25,8 @@ class AppDrawer extends StatefulWidget {
       this.onVerticalDragUpdate,
       this.apps,
       this.pagesChange,
-      this.numberOfPages})
+      this.numberOfPages,
+      this.draggingApp})
       : super(key: key);
 
   @override
@@ -38,9 +41,14 @@ class AppDrawerState extends State<AppDrawer> {
   PageController _pageController;
   int currentPageIndex;
   int numberOfPages;
+  List<AppInfo> drawerApps;
+  int draggingIndex;
+  bool isDragMode;
   @override
   void initState() {
     super.initState();
+    isDragMode = false;
+    draggingIndex = 0;
     _pageController = PageController();
     currentPageIndex = 0;
     numberOfPages = widget.numberOfPages;
@@ -48,9 +56,19 @@ class AppDrawerState extends State<AppDrawer> {
     animationDuration = 0;
     animationEnded = true;
     customHeight = 0;
+    drawerApps = List();
+    log("number of apps ${numberOfPages}");
+  }
+
+  setDrawer(int number, List<AppInfo> drawerApps) {
+    setState(() {
+      numberOfPages = number;
+      this.drawerApps = drawerApps;
+    });
   }
 
   closeDrawer() {
+    log("closing drawer");
     isOpen = false;
     setState(() {
       animationDuration = 100;
@@ -152,38 +170,77 @@ class AppDrawerState extends State<AppDrawer> {
                             height: 50,
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             width: size.width,
-                            child: Row(children: [
-                              Expanded(
-                                  child: Material(
+                            child: isDragMode
+                                ? DragTarget<AppInfo>(onWillAccept: (app) {
+                                    log("closing drawer");
+                                    closeDrawer();
+                                    return true;
+                                  }, builder: (context, candidates, rejects) {
+                                    return Container(
+                                        width: size.width,
+                                        alignment: Alignment.center,
+                                        height: 50,
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: Text("Close Drawer",
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                        ));
+                                  })
+                                : Row(children: [
+                                    Expanded(
+                                        child: Material(
+                                            color: Colors.transparent,
+                                            child: Text("Page Name",
+                                                style: TextStyle(
+                                                    color: Colors.white)))),
+                                    Material(
                                       color: Colors.transparent,
-                                      child: Text("Page Name",
-                                          style:
-                                              TextStyle(color: Colors.white)))),
-                              Material(
-                                color: Colors.transparent,
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.remove,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    //TODO If last page empty
-                                    widget
-                                        .pagesChange(widget.numberOfPages - 1);
-                                  },
-                                ),
-                              ),
-                              Material(
-                                color: Colors.transparent,
-                                child: IconButton(
-                                  icon: Icon(Icons.add, color: Colors.white),
-                                  onPressed: () {
-                                    widget
-                                        .pagesChange(widget.numberOfPages + 1);
-                                  },
-                                ),
-                              ),
-                            ])),
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.remove,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () {
+                                          //TODO If last page empty
+                                          // widget
+                                          // .pagesChange(widget.numberOfPages - 1);
+                                        },
+                                      ),
+                                    ),
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: IconButton(
+                                        icon: Icon(Icons.add,
+                                            color: Colors.white),
+                                        onPressed: () {
+                                          //Add
+                                          setState(() {
+                                            numberOfPages++;
+                                            drawerApps.addAll(List.generate(
+                                                20, (index) => null));
+                                            log("added page");
+                                          });
+                                          // widget
+                                          //     .pagesChange(widget.numberOfPages + 1);
+                                        },
+                                      ),
+                                    ),
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: IconButton(
+                                        icon: Icon(Icons.settings,
+                                            color: Colors.white),
+                                        onPressed: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      SettingScreen()));
+                                        },
+                                      ),
+                                    ),
+                                  ])),
                       ),
                       Expanded(
                         child: PageView.builder(
@@ -194,18 +251,40 @@ class AppDrawerState extends State<AppDrawer> {
                                 currentPageIndex = newIndex;
                               });
                             },
-                            itemCount: (widget.apps.length / 20).ceil(),
-                            itemBuilder: (context, index) => AppGridPage(
-                                  apps: widget.apps
+                            itemCount: numberOfPages,
+                            itemBuilder: (context, pageIndex) => AppGridPage(
+                                  apps: drawerApps
                                       .getRange(
-                                          index * 20,
-                                          ((index + 1) * 20) >
-                                                  widget.apps.length
-                                              ? widget.apps.length - 1
-                                              : ((index + 1) * 20))
+                                          pageIndex * 20,
+                                          ((pageIndex + 1) * 20) >
+                                                  drawerApps.length
+                                              ? drawerApps.length - 1
+                                              : ((pageIndex + 1) * 20))
                                       .toList(),
-                                  onDragStarted: () {
-                                    // closeDrawer();
+                                  onDragStarted: (int index) {
+                                    int actualIndex = (pageIndex * 20) + index;
+                                    widget.draggingApp(actualIndex);
+                                    draggingIndex = actualIndex;
+                                    setState(() {
+                                      isDragMode = true;
+                                    });
+
+                                    //inform main that you are dragging from drawer
+                                  },
+                                  onDragEnded: (int index) {
+                                    log("Drag ended");
+                                    setState(() {
+                                      isDragMode = false;
+                                    });
+                                  },
+                                  onAccepted: (int index, AppInfo app) {
+                                    int actualIndex = (pageIndex * 20) + index;
+                                    log("accepted at index $actualIndex }");
+                                    if (drawerApps[actualIndex] == null) {
+                                      log("swapping places $draggingIndex and $actualIndex");
+                                      swapPlaces(draggingIndex, actualIndex);
+                                      setState(() {});
+                                    }
                                   },
                                 )),
                       ),
@@ -216,11 +295,31 @@ class AppDrawerState extends State<AppDrawer> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              for (int i = 0; i < widget.numberOfPages; i++)
-                                if (currentPageIndex == i)
-                                  Icon(Icons.crop_free, color: Colors.white)
-                                else
-                                  Icon(Icons.crop_square, color: Colors.white)
+                              for (int i = 0; i < numberOfPages; i++)
+                                GestureDetector(
+                                  onTap: () {
+                                    _pageController.animateToPage(i,
+                                        duration: Duration(milliseconds: 300),
+                                        curve: Curves.easeIn);
+                                  },
+                                  child: DragTarget<AppInfo>(
+                                    onWillAccept: (app) {
+                                      if (_pageController.page.toInt() != i)
+                                        _pageController.animateToPage(i,
+                                            duration:
+                                                Duration(milliseconds: 300),
+                                            curve: Curves.easeIn);
+                                      return true;
+                                    },
+                                    builder: (context, candidates, rejects) {
+                                      return Icon(
+                                          currentPageIndex == i
+                                              ? Icons.crop_free
+                                              : Icons.crop_square,
+                                          color: Colors.white);
+                                    },
+                                  ),
+                                )
                             ],
                           ))
                     ],
@@ -230,5 +329,18 @@ class AppDrawerState extends State<AppDrawer> {
             ))
       ],
     );
+  }
+
+  swapPlaces(int dragginIndex, int index) {
+    List<AppInfo> newList = List();
+    for (int i = 0; i < drawerApps.length; i++) {
+      if (i == index)
+        newList.add(drawerApps[dragginIndex]);
+      else if (i == dragginIndex)
+        newList.add(drawerApps[index]);
+      else
+        newList.add(drawerApps[i]);
+    }
+    drawerApps = newList;
   }
 }

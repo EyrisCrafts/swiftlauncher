@@ -1,7 +1,9 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Global.dart';
+import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 
 class DraggableApp extends StatefulWidget {
@@ -20,6 +22,7 @@ class _DraggableAppState extends State<DraggableApp> {
 
   @override
   Widget build(BuildContext context) {
+    log("contains ${Global.iconPack.length}");
     return DragTarget<AppInfo>(
       builder: (BuildContext context, List<AppInfo> candidateData,
           List<dynamic> rejectedData) {
@@ -39,10 +42,13 @@ class _DraggableAppState extends State<DraggableApp> {
                     Container(
                       height: 15,
                       width: 60,
-                      child: Text(candidateData[0].label,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white)),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Text(candidateData[0].label,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white)),
+                      ),
                     )
                   ],
                 )),
@@ -98,6 +104,9 @@ class _DraggableAppState extends State<DraggableApp> {
           onDragStarted: () {
             widget.dragStarted();
           },
+          onDraggableCanceled: (veloc, a) {
+            if (widget.dragEnded != null) widget.dragEnded();
+          },
           onDragCompleted: () {
             if (widget.dragEnded != null) widget.dragEnded();
           },
@@ -117,14 +126,19 @@ class _DraggableAppState extends State<DraggableApp> {
                   Container(
                       height: 40,
                       width: 40,
-                      child: Image.memory(widget.appInfo.icon)),
+                      child: Image.memory(
+                          Global.iconPack[widget.appInfo.package] ??
+                              widget.appInfo.icon)),
                   Container(
                     height: 15,
                     width: 60,
-                    child: Text(widget.appInfo.label,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white)),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(widget.appInfo.label,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white)),
+                    ),
                   )
                 ],
               )),
@@ -143,10 +157,13 @@ class _DraggableAppState extends State<DraggableApp> {
                     Container(
                       height: 15,
                       width: 60,
-                      child: Text(widget.appInfo.label,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white)),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Text(widget.appInfo.label,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white)),
+                      ),
                     )
                   ],
                 )),

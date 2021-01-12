@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 import 'package:swiftlauncher/widgets/BaseDraggableApp.dart';
+import 'package:swiftlauncher/widgets/DraggableApp.dart';
 
 class AppGridPage extends StatelessWidget {
   final List<AppInfo> apps;
-  final Function onDragStarted;
-  const AppGridPage({Key key, @required this.apps, this.onDragStarted})
+  final Function(int) onDragStarted;
+  final Function(int) onDragEnded;
+  final Function(int, AppInfo) onAccepted;
+  const AppGridPage(
+      {Key key,
+      @required this.apps,
+      this.onDragStarted,
+      this.onDragEnded,
+      this.onAccepted})
       : super(key: key);
 
   @override
@@ -15,8 +23,10 @@ class AppGridPage extends StatelessWidget {
       gridDelegate:
           SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
       itemCount: apps.length,
-      itemBuilder: (context, index) =>
-          BaseDraggableApp(appInfo: apps[index], dragStarted: onDragStarted),
+      itemBuilder: (context, index) => DraggableApp(apps[index],
+          (appinfo) => onAccepted(index, appinfo), () => onDragStarted(index),
+          dragEnded: () => onDragEnded(index)),
+      // BaseDraggableApp(appInfo: apps[index], dragStarted: onDragStarted),
     );
   }
 }
