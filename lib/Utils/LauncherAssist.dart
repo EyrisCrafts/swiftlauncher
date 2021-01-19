@@ -51,6 +51,10 @@ class LauncherAssist {
     return data;
   }
 
+  static openNotificationShader() {
+    _channel.invokeMethod("expand");
+  }
+
   static Future<void> loadIconPack(
       String iconPackage, List<String> listOfApps) async {
     listOfApps.forEach((element) async {

@@ -57,6 +57,7 @@ class AppDrawerState extends State<AppDrawer> {
     animationEnded = true;
     customHeight = 0;
     drawerApps = List();
+    drawerApps.addAll(widget.apps);
     log("number of apps ${numberOfPages}");
   }
 
@@ -78,6 +79,10 @@ class AppDrawerState extends State<AppDrawer> {
 
   onVerticalDragEnd(Size size, DragEndDetails details) {
     bool hasChanged = isOpen;
+    if (!isOpen && (details.velocity.pixelsPerSecond.dy > 500)) {
+      log("Velocity is ${details.velocity.pixelsPerSecond.dy}");
+      LauncherAssist.openNotificationShader();
+    }
     if (!isOpen && (-details.velocity.pixelsPerSecond.dy > 500)) {
       isOpen = true;
       animationEnded = true;

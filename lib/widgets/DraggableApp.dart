@@ -11,7 +11,9 @@ class DraggableApp extends StatefulWidget {
   final Function(AppInfo) onAccept;
   final Function() dragStarted;
   final Function() dragEnded;
-  DraggableApp(this.appInfo, this.onAccept, this.dragStarted, {this.dragEnded});
+  final bool isSubTitle;
+  DraggableApp(this.appInfo, this.onAccept, this.dragStarted,
+      {this.dragEnded, this.isSubTitle = true});
 
   @override
   _DraggableAppState createState() => _DraggableAppState();
@@ -22,7 +24,6 @@ class _DraggableAppState extends State<DraggableApp> {
 
   @override
   Widget build(BuildContext context) {
-    log("contains ${Global.iconPack.length}");
     return DragTarget<AppInfo>(
       builder: (BuildContext context, List<AppInfo> candidateData,
           List<dynamic> rejectedData) {
@@ -39,17 +40,19 @@ class _DraggableAppState extends State<DraggableApp> {
                         height: 40,
                         width: 40,
                         child: Image.memory(candidateData[0].icon)),
-                    Container(
-                      height: 15,
-                      width: 60,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Text(candidateData[0].label,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    )
+                    if (widget.isSubTitle)
+                      Container(
+                        height: 15,
+                        width: 60,
+                        margin: EdgeInsets.only(top: 4),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(candidateData[0].label,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: getTextStyle()),
+                        ),
+                      )
                   ],
                 )),
           );
@@ -57,7 +60,7 @@ class _DraggableAppState extends State<DraggableApp> {
         return widget.appInfo == null
             ? Container(
                 height: 40,
-                width: 40,
+                width: 60,
               )
             : _buildDraggable();
         // : _buildDraggable();
@@ -89,7 +92,7 @@ class _DraggableAppState extends State<DraggableApp> {
       },
       onTapUp: (detials) {
         log("Opening app");
-        // LauncherAssist.launchApp(appInfo);
+        LauncherAssist.launchApp(widget.appInfo);
 
         // if (isVis)
         //   setState(() {
@@ -115,7 +118,7 @@ class _DraggableAppState extends State<DraggableApp> {
           },
           childWhenDragging: Container(
             height: 40,
-            width: 40,
+            width: 60,
           ),
           child: Container(
               height: 40 + (Global.isIconTextVis ? 15 : 0).toDouble(),
@@ -124,22 +127,24 @@ class _DraggableAppState extends State<DraggableApp> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                      height: 40,
-                      width: 40,
+                      height: 50,
+                      width: 50,
                       child: Image.memory(
                           Global.iconPack[widget.appInfo.package] ??
                               widget.appInfo.icon)),
-                  Container(
-                    height: 15,
-                    width: 60,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Text(widget.appInfo.label,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                  )
+                  if (widget.isSubTitle)
+                    Container(
+                      height: 15,
+                      width: 60,
+                      margin: EdgeInsets.only(top: 4),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Text(widget.appInfo.label,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: getTextStyle()),
+                      ),
+                    )
                 ],
               )),
           feedback: Material(
@@ -154,22 +159,28 @@ class _DraggableAppState extends State<DraggableApp> {
                         height: 40,
                         width: 40,
                         child: Image.memory(widget.appInfo.icon)),
-                    Container(
-                      height: 15,
-                      width: 60,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Text(widget.appInfo.label,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    )
+                    if (widget.isSubTitle)
+                      Container(
+                        height: 15,
+                        width: 60,
+                        margin: EdgeInsets.only(top: 4),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(widget.appInfo.label,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: getTextStyle()),
+                        ),
+                      )
                   ],
                 )),
           ),
         ),
       ),
     );
+  }
+
+  TextStyle getTextStyle() {
+    return TextStyle(color: Colors.white, fontSize: 11);
   }
 }
