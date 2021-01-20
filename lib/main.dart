@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
+import 'package:swiftlauncher/Providers/DrawerChangeProvider.dart';
+import 'package:swiftlauncher/Providers/DrawerHeightProvider.dart';
 import 'package:swiftlauncher/screens/MainScreen.dart';
 // import 'package:launcher_assist/launcher_assist.dart';
 
@@ -19,8 +21,11 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: ChangeNotifierProvider(
-          create: (context) => AppThemeProvider(), child: MainScreen()),
+      home: MultiProvider(providers: [
+        ChangeNotifierProvider(create: (context) => AppThemeProvider()),
+        ChangeNotifierProvider(create: (context) => DrawerHeightProvider()),
+        ChangeNotifierProvider(create: (context) => DrawerChangeProvider()),
+      ], child: MainScreen()),
     );
   }
 }
