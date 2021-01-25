@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
+import 'package:swiftlauncher/Providers/ProviderIconPack.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 
 class DraggableApp extends StatefulWidget {
@@ -12,8 +13,9 @@ class DraggableApp extends StatefulWidget {
   final Function() dragStarted;
   final Function() dragEnded;
   final bool isSubTitle;
+  final Function onAppOpening;
   DraggableApp(this.appInfo, this.onAccept, this.dragStarted,
-      {this.dragEnded, this.isSubTitle = true});
+      {this.dragEnded, this.isSubTitle = true, this.onAppOpening});
 
   @override
   _DraggableAppState createState() => _DraggableAppState();
@@ -92,6 +94,9 @@ class _DraggableAppState extends State<DraggableApp> {
       },
       onTapUp: (detials) {
         log("Opening app");
+        if (widget.onAppOpening != null) {
+          widget.onAppOpening();
+        }
         LauncherAssist.launchApp(widget.appInfo);
 
         // if (isVis)
@@ -126,12 +131,21 @@ class _DraggableAppState extends State<DraggableApp> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                      height: 50,
-                      width: 50,
-                      child: Image.memory(
-                          Global.iconPack[widget.appInfo.package] ??
-                              widget.appInfo.icon)),
+                  Consumer<ProviderIconPack>(
+                    builder: (context, value, child) => Container(
+                        height: 50,
+                        width: 50,
+                        child: Image.memory(
+                            value.getIcon(widget.appInfo.package) ??
+                                widget.appInfo.icon)),
+                  ),
+                  //                Container(
+                  // height: 50,
+                  // width: 50,
+                  // child: Image.memory(
+                  //     Global.iconPack[widget.appInfo.package] ??
+                  //         widget.appInfo.icon)),
+
                   if (widget.isSubTitle)
                     Container(
                       height: 15,
@@ -161,7 +175,7 @@ class _DraggableAppState extends State<DraggableApp> {
                         child: Image.memory(widget.appInfo.icon)),
                     if (widget.isSubTitle)
                       Container(
-                        height: 15,
+                        height: 10,
                         width: 60,
                         margin: EdgeInsets.only(top: 4),
                         child: Material(

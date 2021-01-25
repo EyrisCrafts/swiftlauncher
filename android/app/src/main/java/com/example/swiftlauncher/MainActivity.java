@@ -2,7 +2,10 @@ package com.example.swiftlauncher;
 
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -10,7 +13,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 import android.app.SearchManager;
 
@@ -21,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +40,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.embedding.android.FlutterActivity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import io.flutter.embedding.engine.FlutterEngine;
@@ -45,6 +52,12 @@ import android.graphics.Bitmap;
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "launcher_assist";
     private byte[] wallpaperData = null;
+    MethodChannel.Result appChangeResult;
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+//    }
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -73,11 +86,74 @@ public class MainActivity extends FlutterActivity {
                             } else if (call.method.equals("getIcon")) {
                                 getIconFromPack(result, call.argument("pckg").toString(), call.argument("key").toString());
                             } else if (call.method.equals("expand")) {
-                                expandNotif();
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                                    expandNotif();
+                            } else if (call.method.equals("appChangeResult")) {
+                                if (appChangeResult == null) {
+                                    appChangeResult = result;
+                                }
                             }
                         }
                 );
     }
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+        filter.addDataScheme("package_name");
+        getApplicationContext().registerReceiver(onAppListChangedReciever, filter);
+    }
+
+    BroadcastReceiver onAppListChangedReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent intent) {
+            try {
+                final String action = intent.getAction();
+
+                if (action != null && action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+                    Uri data = intent.getData();
+                    String pkgName = data.getEncodedSchemeSpecificPart();
+                    if (appChangeResult != null) {
+                        appChangeResult.success(pkgName);
+                    }
+
+                }
+//                boolean success = intent.getBooleanExtra(
+//                        WifiManager.EXTRA_RESULTS_UPDATED, false);
+//                if (success) {
+//                    scanSuccess();
+//                } else {
+//                    // scan failure handling
+//                    scanFailure();
+//                }
+
+            } catch (Exception e) {
+//                scanFailure();
+            }
+        }
+    };
+
+    void registerReceiver() {
+        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addDataScheme("package_name");
+    }
+
+    public void onReceive(Context context, Intent intent) {
+        final String action = intent.getAction();
+
+        if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+            Uri data = intent.getData();
+            String pkgName = data.getEncodedSchemeSpecificPart();
+        }
+
+        /* etc. */
+    }
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void expandNotif() {
@@ -99,19 +175,77 @@ public class MainActivity extends FlutterActivity {
 
     //TODO GET ICON FROM PACK THAT IS GIVEN
     private void getIconFromPack(MethodChannel.Result result, String packageName, String key) {
-        IconPackManager manager = new IconPackManager();
-        manager.setContext(getApplication());
-        HashMap<String, IconPackManager.IconPack> map = manager.getAvailableIconPacks(false);
-        IconPackManager.IconPack pack = map.get(packageName);
-        pack.load();
-        Bitmap bitmap = pack.getIconForPackage(key, null);
-        if (bitmap == null) {
-            result.success(null);
-        } else {
+//        List<String> keys = Arrays.asList(key.split(","));
+//        ArrayList<byte[]> toReturn = new ArrayList<>();
+//        for (String mKey : keys) {
+//            IconPackManager manager = new IconPackManager();
+//            manager.setContext(getApplication());
+//            HashMap<String, IconPackManager.IconPack> map = manager.getAvailableIconPacks(false);
+//            IconPackManager.IconPack pack = map.get(packageName);
+//            pack.load();
+//            Bitmap bitmap = pack.getIconForPackage(mKey, null);
+//            if (bitmap == null) {
+//                toReturn.add(null);
+//            } else {
+//                toReturn.add(convertToBytes(bitmap, Bitmap.CompressFormat.PNG, 100));
+//            }
+//        }
+//
+//        result.success(toReturn);
 
-            result.success(convertToBytes(bitmap, Bitmap.CompressFormat.PNG, 100));
-        }
+        new AsyncTask(){
+            MethodChannel.Result mResult;
+            ArrayList<byte[]> toReturn;
+            @Override
+            protected Object doInBackground(Object[] objects)
+            {
+                mResult = (Result) objects[0];
+
+                String packageName = (String) objects[1];
+                String key = (String) objects[2];
+
+
+                List<String> keys = Arrays.asList(key.split(","));
+                toReturn = new ArrayList<>();
+                for (String mKey : keys) {
+                    IconPackManager manager = new IconPackManager();
+                    manager.setContext(getApplication());
+                    HashMap<String, IconPackManager.IconPack> map = manager.getAvailableIconPacks(false);
+                    IconPackManager.IconPack pack = map.get(packageName);
+                    pack.load();
+                    Bitmap bitmap = pack.getIconForPackage(mKey, null);
+                    if (bitmap == null) {
+                        toReturn.add(null);
+                    } else {
+                        toReturn.add(convertToBytes(bitmap, Bitmap.CompressFormat.PNG, 100));
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+                mResult.success(toReturn);
+            }
+        }.execute(result,packageName,key);
     }
+//    private void getIconFromPack(MethodChannel.Result result, String packageName, String key) {
+//        //Given list of packagenames, send list of bitmaps
+//        IconPackManager manager = new IconPackManager();
+//        manager.setContext(getApplication());
+//        HashMap<String, IconPackManager.IconPack> map = manager.getAvailableIconPacks(false);
+//        IconPackManager.IconPack pack = map.get(packageName);
+//        pack.load();
+//        Bitmap bitmap = pack.getIconForPackage(key, null);
+//        if (bitmap == null) {
+//            result.success(null);
+//        } else {
+//
+//            result.success(convertToBytes(bitmap, Bitmap.CompressFormat.PNG, 100));
+//        }
+//    }
 
     private void getIconPacks(MethodChannel.Result result) {
         IconPackManager manager = new IconPackManager();
@@ -221,7 +355,11 @@ public class MainActivity extends FlutterActivity {
 
     private void launchApp(String packageName) {
         Intent i = getApplicationContext().getPackageManager().getLaunchIntentForPackage(packageName);
-        if (i != null)
+        if (i != null) {
             getApplicationContext().startActivity(i);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        }
     }
+
+
 }

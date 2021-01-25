@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
+import 'package:hardware_buttons/hardware_buttons.dart';
 import 'package:swiftlauncher/Providers/DrawerChangeProvider.dart';
 import 'package:swiftlauncher/Providers/DrawerHeightProvider.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
@@ -50,6 +51,18 @@ class AppDrawerState extends State<AppDrawer> {
   @override
   void initState() {
     super.initState();
+    homeButtonEvents.listen((event) {
+      log("Home pressed");
+      if (isOpen) {
+        isOpen = false;
+        Provider.of<DrawerHeightProvider>(context, listen: false)
+            .setUpdateHeight(0, 100);
+      }
+    });
+    lockButtonEvents.listen((event) {
+      log("phone locked");
+    });
+
     isDragMode = false;
     draggingIndex = 0;
     _pageController = PageController();
@@ -119,7 +132,7 @@ class AppDrawerState extends State<AppDrawer> {
           (size.height / 2)) {
         animationEnded = true;
         Provider.of<DrawerHeightProvider>(context, listen: false)
-            .setUpdateHeight(0, 100);
+            .setUpdateHeight(0, 300);
 
         // setState(() {
         //   animationDuration = 100;
@@ -141,7 +154,7 @@ class AppDrawerState extends State<AppDrawer> {
         animationEnded = true;
         isOpen = false;
         Provider.of<DrawerHeightProvider>(context, listen: false)
-            .setUpdateHeight(0, 100);
+            .setUpdateHeight(0, 300);
 
         // setState(() {
         //   animationDuration = 100;
@@ -194,11 +207,13 @@ class AppDrawerState extends State<AppDrawer> {
         Positioned.fill(child: widget.child),
         Consumer<DrawerHeightProvider>(
           builder: (context, value, child) => AnimatedPositioned(
+              curve: Curves.easeOut,
               duration: Duration(
                 milliseconds: value.animationDuration,
               ),
               onEnd: () {
-                Provider.of<DrawerHeightProvider>(context).setNewDuration();
+                Provider.of<DrawerHeightProvider>(context, listen: false)
+                    .setNewDuration();
                 animationEnded = true;
               },
               left: 0,
@@ -207,10 +222,9 @@ class AppDrawerState extends State<AppDrawer> {
                 child: Container(
                   width: size.width,
                   height: size.height,
-                  color: Colors.transparent,
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    // child: Text("hello"),
+                  color: Colors.black.withOpacity(0.7),
+                  child: Container(
+                    // filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Column(
                       children: [
                         SafeArea(
@@ -235,66 +249,160 @@ class AppDrawerState extends State<AppDrawer> {
                                                     color: Colors.white)),
                                           ));
                                     })
-                                  : Row(children: [
-                                      Expanded(
-                                          child: Material(
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                          // Expanded(child: Container()),
+                                          // Material(
+                                          //   color: Colors.transparent,
+                                          //   child: IconButton(
+                                          //     icon: Icon(
+                                          //       Icons.remove,
+                                          //       color: Colors.white,
+                                          //     ),
+                                          //     onPressed: () {
+                                          //       //TODO If current page empty
+
+                                          //       if (isPageEmpty()) {
+                                          //         log("page is empty. Removing from ");
+                                          //         //Remove the
+                                          //         int pg =
+                                          //             _pageController.page.toInt();
+                                          //         setState(() {
+                                          //           drawerApps.removeRange(
+                                          //               pg * 20, (pg * 20) + 20);
+                                          //           numberOfPages--;
+                                          //         });
+                                          //       }
+                                          //       // widget
+                                          //       // .pagesChange(widget.numberOfPages - 1);
+                                          //     },
+                                          //   ),
+                                          // ),
+                                          // Material(
+                                          //   color: Colors.transparent,
+                                          //   child: IconButton(
+                                          //     icon: Icon(Icons.add,
+                                          //         color: Colors.white),
+                                          //     onPressed: () {
+                                          //       //Add
+                                          //       setState(() {
+                                          //         numberOfPages++;
+                                          //         drawerApps.addAll(List.generate(
+                                          //             20, (index) => null));
+                                          //         log("added page");
+                                          //       });
+
+                                          //     },
+                                          //   ),
+                                          // ),
+                                          // Material(
+                                          //   color: Colors.transparent,
+                                          //   child: IconButton(
+                                          //     icon: Icon(Icons.settings,
+                                          //         color: Colors.white),
+                                          //     onPressed: () {
+                                          //       Navigator.push(
+                                          //           context,
+                                          //           MaterialPageRoute(
+                                          //               builder: (context) =>
+                                          //                   SettingScreen()));
+                                          //     },
+                                          //   ),
+                                          // ),
+                                          Container(
+                                            height: 40,
+                                            width: 40,
+                                            child: Material(
                                               color: Colors.transparent,
-                                              child: Text("Swift Launcher",
-                                                  style: TextStyle(
-                                                      color: Colors.white)))),
-                                      Material(
-                                        color: Colors.transparent,
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.remove,
-                                            color: Colors.white,
+                                              child: PopupMenuButton(
+                                                  icon: Icon(Icons.more_vert,
+                                                      color: Colors.white),
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10)),
+                                                  color: Colors.white,
+                                                  onSelected: (int val) {
+                                                    switch (val) {
+                                                      case 1:
+                                                        Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        SettingScreen()));
+                                                        break;
+                                                      case 2:
+                                                        setState(() {
+                                                          numberOfPages++;
+                                                          drawerApps.addAll(
+                                                              List.generate(
+                                                                  20,
+                                                                  (index) =>
+                                                                      null));
+                                                          log("added page");
+                                                        });
+                                                        break;
+                                                      case 3:
+                                                        if (isPageEmpty()) {
+                                                          log("page is empty. Removing from ");
+                                                          //Remove the
+                                                          int pg =
+                                                              _pageController
+                                                                  .page
+                                                                  .toInt();
+                                                          setState(() {
+                                                            drawerApps
+                                                                .removeRange(
+                                                                    pg * 20,
+                                                                    (pg * 20) +
+                                                                        20);
+                                                            numberOfPages--;
+                                                          });
+                                                        }
+                                                        break;
+                                                      default:
+                                                    }
+                                                  },
+                                                  itemBuilder: (context) => [
+                                                        PopupMenuItem(
+                                                            value: 1,
+                                                            child: Row(
+                                                              children: [
+                                                                Icon(Icons
+                                                                    .settings),
+                                                                SizedBox(
+                                                                    width: 10),
+                                                                Text("Settings")
+                                                              ],
+                                                            )),
+                                                        PopupMenuItem(
+                                                            value: 2,
+                                                            child: Row(
+                                                              children: [
+                                                                Icon(Icons.add),
+                                                                SizedBox(
+                                                                    width: 10),
+                                                                Text("New Page")
+                                                              ],
+                                                            )),
+                                                        PopupMenuItem(
+                                                            value: 3,
+                                                            child: Row(
+                                                              children: [
+                                                                Icon(Icons
+                                                                    .remove),
+                                                                SizedBox(
+                                                                    width: 10),
+                                                                Text(
+                                                                    "Remove Page")
+                                                              ],
+                                                            ))
+                                                      ]),
+                                            ),
                                           ),
-                                          onPressed: () {
-                                            //TODO If current page empty
-
-                                            if (isPageEmpty()) {
-                                              log("page is empty");
-                                              //Remove the
-
-                                            }
-                                            // widget
-                                            // .pagesChange(widget.numberOfPages - 1);
-                                          },
-                                        ),
-                                      ),
-                                      Material(
-                                        color: Colors.transparent,
-                                        child: IconButton(
-                                          icon: Icon(Icons.add,
-                                              color: Colors.white),
-                                          onPressed: () {
-                                            //Add
-                                            setState(() {
-                                              numberOfPages++;
-                                              drawerApps.addAll(List.generate(
-                                                  20, (index) => null));
-                                              log("added page");
-                                            });
-                                            // widget
-                                            //     .pagesChange(widget.numberOfPages + 1);
-                                          },
-                                        ),
-                                      ),
-                                      Material(
-                                        color: Colors.transparent,
-                                        child: IconButton(
-                                          icon: Icon(Icons.settings,
-                                              color: Colors.white),
-                                          onPressed: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        SettingScreen()));
-                                          },
-                                        ),
-                                      ),
-                                    ])),
+                                        ])),
                         ),
                         Expanded(
                           child: PageView.builder(
@@ -345,6 +453,9 @@ class AppDrawerState extends State<AppDrawer> {
                                         setState(() {});
                                       }
                                     },
+                                    onAppOpening: () {
+                                      closeDrawer();
+                                    },
                                   )),
                         ),
                         Container(
@@ -374,11 +485,11 @@ class AppDrawerState extends State<AppDrawer> {
                                         },
                                         builder:
                                             (context, candidates, rejects) {
-                                          return Icon(
-                                              value.getCurrentPage == i
-                                                  ? Icons.crop_free
-                                                  : Icons.crop_square,
-                                              color: Colors.white);
+                                          return Icon(Icons.circle,
+                                              color: value.getCurrentPage == i
+                                                  ? Colors.white
+                                                  : Colors.white
+                                                      .withOpacity(0.4));
                                         },
                                       ),
                                     ),
@@ -397,11 +508,13 @@ class AppDrawerState extends State<AppDrawer> {
 
   bool isPageEmpty() {
     int currentPage = _pageController.page.toInt();
-    List<AppInfo> nlist = drawerApps.getRange(
-        currentPage * 20,
-        ((currentPage + 1) * 20) > drawerApps.length
-            ? drawerApps.length - 1
-            : ((currentPage + 1) * 20));
+    List<AppInfo> nlist = drawerApps
+        .getRange(
+            currentPage * 20,
+            ((currentPage + 1) * 20) > drawerApps.length
+                ? drawerApps.length - 1
+                : ((currentPage + 1) * 20))
+        .toList();
     return nlist
         .map((e) => e == null)
         .reduce((value, element) => value && element);

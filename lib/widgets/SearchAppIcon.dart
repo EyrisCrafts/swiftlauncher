@@ -5,14 +5,17 @@ class AppIcon extends StatelessWidget {
   const AppIcon({
     Key key,
     @required this.app,
+    this.onAppOpening,
   }) : super(key: key);
 
   final AppInfo app;
+  final Function onAppOpening;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        if (onAppOpening != null) onAppOpening();
         LauncherAssist.launchApp(app);
       },
       child: Container(

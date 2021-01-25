@@ -15,6 +15,7 @@ import 'package:swiftlauncher/widgets/AppDrawer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:swiftlauncher/widgets/AppSettingDialog.dart';
 import 'package:swiftlauncher/widgets/DraggableApp.dart';
+import 'package:hardware_buttons/hardware_buttons.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -62,6 +63,7 @@ class _MainScreenState extends State<MainScreen> {
     drawerApps = List();
     isSearchMode = false;
     initialization = initializeApps();
+    LauncherAssist.initAppsChangeListener();
   }
 
   loadDrawerSettings() {
@@ -556,6 +558,16 @@ class _MainScreenState extends State<MainScreen> {
                                 itemCount: filteredApps.length,
                                 itemBuilder: (context, index) => AppIcon(
                                       app: filteredApps[index],
+                                      onAppOpening: () {
+                                        if (isSearchMode) {
+                                          setState(() {
+                                            filteredApps.clear();
+                                            isSearchMode = false;
+                                            _searchController.clear();
+                                            FocusScope.of(context).unfocus();
+                                          });
+                                        }
+                                      },
                                     )),
                       ),
                     ),

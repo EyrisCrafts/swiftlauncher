@@ -2,8 +2,10 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Models/IconPack.dart';
+import 'package:swiftlauncher/Providers/ProviderIconPack.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 import 'package:swiftlauncher/screens/MainScreen.dart';
 
@@ -81,9 +83,15 @@ class _IconPacksState extends State<IconPacks> {
                                       snapshot.data[i].getPackageName,
                                       allApps.map((e) => e.package).toList())
                                   .then((value) {
-                                setState(() {
-                                  selected = i + 1;
-                                });
+                                if (mounted) {
+                                  Provider.of<ProviderIconPack>(context,
+                                          listen: false)
+                                      .setIconPack(value);
+
+                                  setState(() {
+                                    selected = i + 1;
+                                  });
+                                }
                               });
                             }
                           },
