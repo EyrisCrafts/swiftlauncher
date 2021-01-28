@@ -3,9 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
+import 'package:hardware_buttons/hardware_buttons.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Models/IconPack.dart';
 import 'package:swiftlauncher/Providers/ProviderIconPack.dart';
+import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 import 'package:swiftlauncher/screens/MainScreen.dart';
 
@@ -16,15 +18,23 @@ class IconPacks extends StatefulWidget {
 
 class _IconPacksState extends State<IconPacks> {
   Future<List<IconPack>> packs;
-  int selected;
+  String selected;
   Uint8List nIcon;
+  bool isLoading;
+
   @override
   void initState() {
     super.initState();
-    //TODO Load from prefs
-    selected = 0;
-    log("loading packs");
+    selected =
+        Provider.of<ProviderSettings>(context, listen: false).getIconPack;
+    isLoading = false;
     packs = LauncherAssist.getIconPacks();
+    homeButtonEvents.listen((event) {
+      log("Home pressed");
+      NavigatorState nav = Navigator.of(context);
+      nav.pop();
+      nav.pop();
+    });
   }
 
   @override
@@ -34,12 +44,12 @@ class _IconPacksState extends State<IconPacks> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Icon Packs"),
+        backgroundColor: Global.themeColor,
       ),
       body: FutureBuilder<List<IconPack>>(
           future: packs,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              log("loading packs ${snapshot.data.first.getPackageName}");
               return Container(
                 height: size.height,
                 width: size.width,
@@ -47,19 +57,24 @@ class _IconPacksState extends State<IconPacks> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    if (isLoading) LinearProgressIndicator(),
                     Material(
                       child: InkWell(
                         onTap: () {
-                          if (selected != 0) {
+                          if (selected != "System") {
+                            Provider.of<ProviderSettings>(context,
+                                    listen: false)
+                                .setIconPack("System");
                             Global.iconPack.clear();
                             setState(() {
-                              selected = 0;
+                              selected = "System";
                             });
                           }
                         },
                         child: ListTile(
                           title: Text("System"),
-                          trailing: selected == 0 ? Icon(Icons.check) : null,
+                          trailing:
+                              selected == "System" ? Icon(Icons.check) : null,
                         ),
                       ),
                     ),
@@ -67,7 +82,10 @@ class _IconPacksState extends State<IconPacks> {
                       Material(
                         child: InkWell(
                           onTap: () async {
-                            if (selected != i + 1) {
+                            if (selected != snapshot.data[i].getName) {
+                              Provider.of<ProviderSettings>(context,
+                                      listen: false)
+                                  .setIconPack(snapshot.data[i].getName);
                               //TODO Add all the icons into iconpack
 
                               // Uint8List data = await LauncherAssist.loadIcon(
@@ -78,7 +96,9 @@ class _IconPacksState extends State<IconPacks> {
                               //   log("loaded the icon");
                               //   nIcon = data;
                               // });
-
+                              setState(() {
+                                isLoading = true;
+                              });
                               LauncherAssist.loadIconPack(
                                       snapshot.data[i].getPackageName,
                                       allApps.map((e) => e.package).toList())
@@ -86,10 +106,12 @@ class _IconPacksState extends State<IconPacks> {
                                 if (mounted) {
                                   Provider.of<ProviderIconPack>(context,
                                           listen: false)
-                                      .setIconPack(value);
+                                      .setIconPack(value,
+                                          snapshot.data[i].getPackageName);
 
                                   setState(() {
-                                    selected = i + 1;
+                                    selected = snapshot.data[i].getName;
+                                    isLoading = false;
                                   });
                                 }
                               });
@@ -97,8 +119,9 @@ class _IconPacksState extends State<IconPacks> {
                           },
                           child: ListTile(
                             title: Text(snapshot.data[i].getName),
-                            trailing:
-                                selected == i + 1 ? Icon(Icons.check) : null,
+                            trailing: selected == snapshot.data[i].getName
+                                ? Icon(Icons.check)
+                                : null,
                           ),
                         ),
                       ),

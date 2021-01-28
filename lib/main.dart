@@ -7,6 +7,7 @@ import 'package:swiftlauncher/screens/MainScreen.dart';
 
 import 'Providers/ProviderDrawerApps.dart';
 import 'Providers/ProviderIconPack.dart';
+import 'Providers/ProviderSettings.dart';
 // import 'package:launcher_assist/launcher_assist.dart';
 
 void main() {
@@ -22,16 +23,31 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => AppThemeProvider()),
         ChangeNotifierProvider(create: (context) => DrawerHeightProvider()),
         ChangeNotifierProvider(create: (context) => DrawerChangeProvider()),
-        ChangeNotifierProvider(create: (context) => ProviderIconPack(Map())),
+        ChangeNotifierProvider(create: (context) => ProviderSettings()),
+        ChangeNotifierProvider(
+            create: (context) => ProviderIconPack(Map(), "")),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Swift Launcher',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+      child: Builder(
+        builder: (context) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Swift Launcher',
+          darkTheme: ThemeData(
+            primarySwatch: Colors.grey,
+            primaryColor: Colors.black,
+            brightness: Brightness.dark,
+            backgroundColor: const Color(0xFF212121),
+            accentIconTheme: IconThemeData(color: Colors.black),
+            dividerColor: Colors.black12,
+          ),
+          themeMode: Provider.of<ProviderSettings>(context).getIsDarkTheme
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          home: MainScreen(),
         ),
-        home: MainScreen(),
       ),
     );
   }

@@ -27,10 +27,35 @@ class LauncherAssist {
     return toReturn;
   }
 
+  static Stream<dynamic> handlesCREENChanges() {
+    const EventChannel _stream = EventChannel('screen_status');
+
+    return _stream.receiveBroadcastStream();
+  }
+
+  static Stream<dynamic> newAppListener() {
+    const EventChannel _stream = EventChannel('updatedApps');
+
+    return _stream.receiveBroadcastStream();
+  }
+
+  static Future<AppInfo> getAppInfo(String pkgName) async {
+    Map<String, dynamic> dd = Map.from(
+        await _channel.invokeMethod("getAppInfo", {"package": pkgName}));
+    return AppInfo.fromMap(dd);
+  }
+
   /// Launches an app using its package name
   static void launchApp(AppInfo packageName) {
     Global.recentApps.add(packageName);
     _channel.invokeMethod("launchApp", {"packageName": packageName.package});
+  }
+
+  static void uninstallApp(String pkgname) {
+    //Remove from recent if its there
+
+    Global.recentApps.removeWhere((element) => element.package == pkgname);
+    _channel.invokeMethod("uninstallApp", {"package": pkgname});
   }
 
   static Future<List<IconPack>> getIconPacks() async {

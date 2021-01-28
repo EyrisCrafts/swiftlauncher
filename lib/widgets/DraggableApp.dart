@@ -33,7 +33,7 @@ class _DraggableAppState extends State<DraggableApp> {
           return Opacity(
             opacity: 0.4,
             child: Container(
-                height: 40 + (Global.isIconTextVis ? 15 : 0).toDouble(),
+                height: 40 + (widget.isSubTitle ? 15 : 0).toDouble(),
                 width: 60,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -126,7 +126,7 @@ class _DraggableAppState extends State<DraggableApp> {
             width: 60,
           ),
           child: Container(
-              height: 40 + (Global.isIconTextVis ? 15 : 0).toDouble(),
+              height: 54 + (widget.isSubTitle ? 15 : 0).toDouble(),
               width: 60,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -164,7 +164,7 @@ class _DraggableAppState extends State<DraggableApp> {
           feedback: Material(
             color: Colors.transparent,
             child: Container(
-                height: 40 + (Global.isIconTextVis ? 15 : 0).toDouble(),
+                height: 40 + (widget.isSubTitle ? 15 : 0).toDouble(),
                 width: 60,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

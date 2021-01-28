@@ -13,6 +13,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.display.DisplayManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -48,20 +50,99 @@ import io.flutter.plugin.common.MethodChannel;
 
 import android.net.Uri;
 import android.graphics.Bitmap;
+import android.view.Display;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "launcher_assist";
     private byte[] wallpaperData = null;
     MethodChannel.Result appChangeResult;
+    public static final String STREAM = "screen_status";
+    EventChannel.EventSink mEvents;
+
+    public static final String STREAM_RESUME = "updatedApps";
+    EventChannel.EventSink appsStream;
 //    @Override
 //    protected void onResume() {
 //        super.onResume();
 //        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 //    }
 
+    BroadcastReceiver onAppListChangedReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent intent) {
+            try {
+                final String action = intent.getAction();
+
+                if (action != null) {
+                    Uri data = intent.getData();
+                    String pkgName = data.getEncodedSchemeSpecificPart();
+                    if (appsStream != null) {
+                        if (intent.getAction().equals(Intent.ACTION_PACKAGE_REMOVED)) {
+                            appsStream.success('R' + pkgName);
+                        } else if (intent.getAction().equals(Intent.ACTION_PACKAGE_ADDED)) {
+                            appsStream.success('A' + pkgName);
+                        }
+                    }
+
+//                    if (appChangeResult != null) {
+//                        appChangeResult.success(pkgName);
+//                    }
+
+                }
+            } catch (Exception e) {
+            }
+        }
+    };
+
+    @Override
+    protected void onStop() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            if (!isScreenOn() && mEvents != null) {
+                mEvents.success(true);
+            }
+        }
+        super.onStop();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT_WATCH)
+    private boolean isScreenOn() {
+        DisplayManager dm = (DisplayManager)
+                getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
+        for (Display display : dm.getDisplays()) {
+            if (display.getState() != Display.STATE_OFF) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
+        new EventChannel(flutterEngine.getDartExecutor(), STREAM).setStreamHandler(
+                new EventChannel.StreamHandler() {
+                    @Override
+                    public void onListen(Object args, final EventChannel.EventSink events) {
+                        mEvents = events;
+                    }
+
+                    @Override
+                    public void onCancel(Object args) {
+                    }
+                }
+        );
+        new EventChannel(flutterEngine.getDartExecutor(), STREAM_RESUME).setStreamHandler(
+                new EventChannel.StreamHandler() {
+                    @Override
+                    public void onListen(Object args, final EventChannel.EventSink events) {
+                        appsStream = events;
+                    }
+
+                    @Override
+                    public void onCancel(Object args) {
+                    }
+                }
+        );
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
                 .setMethodCallHandler(
                         (call, result) -> {
@@ -92,7 +173,12 @@ public class MainActivity extends FlutterActivity {
                                 if (appChangeResult == null) {
                                     appChangeResult = result;
                                 }
+                            } else if (call.method.equals("getAppInfo")){
+                                getAppInfo(result,call.argument("package").toString());
+                            } else if (call.method.equals("uninstallApp")){
+                                uninstallApp(call.argument("package").toString());
                             }
+
                         }
                 );
     }
@@ -103,38 +189,10 @@ public class MainActivity extends FlutterActivity {
         IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
         filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
         filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
-        filter.addDataScheme("package_name");
+        filter.addDataScheme("package");
         getApplicationContext().registerReceiver(onAppListChangedReciever, filter);
     }
 
-    BroadcastReceiver onAppListChangedReciever = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context c, Intent intent) {
-            try {
-                final String action = intent.getAction();
-
-                if (action != null && action.equals(Intent.ACTION_PACKAGE_ADDED)) {
-                    Uri data = intent.getData();
-                    String pkgName = data.getEncodedSchemeSpecificPart();
-                    if (appChangeResult != null) {
-                        appChangeResult.success(pkgName);
-                    }
-
-                }
-//                boolean success = intent.getBooleanExtra(
-//                        WifiManager.EXTRA_RESULTS_UPDATED, false);
-//                if (success) {
-//                    scanSuccess();
-//                } else {
-//                    // scan failure handling
-//                    scanFailure();
-//                }
-
-            } catch (Exception e) {
-//                scanFailure();
-            }
-        }
-    };
 
     void registerReceiver() {
         IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
@@ -193,12 +251,12 @@ public class MainActivity extends FlutterActivity {
 //
 //        result.success(toReturn);
 
-        new AsyncTask(){
+        new AsyncTask() {
             MethodChannel.Result mResult;
             ArrayList<byte[]> toReturn;
+
             @Override
-            protected Object doInBackground(Object[] objects)
-            {
+            protected Object doInBackground(Object[] objects) {
                 mResult = (Result) objects[0];
 
                 String packageName = (String) objects[1];
@@ -229,8 +287,10 @@ public class MainActivity extends FlutterActivity {
                 super.onPostExecute(o);
                 mResult.success(toReturn);
             }
-        }.execute(result,packageName,key);
+        }.execute(result, packageName, key);
     }
+
+
 //    private void getIconFromPack(MethodChannel.Result result, String packageName, String key) {
 //        //Given list of packagenames, send list of bitmaps
 //        IconPackManager manager = new IconPackManager();
@@ -289,6 +349,36 @@ public class MainActivity extends FlutterActivity {
         intent.setPackage("com.vanced.android.youtube");
         intent.setData(Uri.parse("https://www.youtube.com/results?search_query=" + query));
         startActivity(intent);
+    }
+    private void uninstallApp(String pkg) {
+        Intent intent = new Intent(Intent.ACTION_DELETE);
+        intent.setData(Uri.parse("package:"+pkg));
+        startActivity(intent);
+    }
+
+    private void getAppInfo(MethodChannel.Result result, String pkgName) {
+        Intent intent = new Intent(Intent.ACTION_MAIN, null);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        PackageManager manager = getApplicationContext().getPackageManager();
+        try {
+            ApplicationInfo app = manager.getApplicationInfo(
+                    pkgName, PackageManager.GET_META_DATA);
+
+            if (manager.getLaunchIntentForPackage(app.packageName) != null) {
+
+                byte[] iconData = convertToBytes(getBitmapFromDrawable(app.loadIcon(manager)),
+                        Bitmap.CompressFormat.PNG, 100);
+                Map<String, Object> current = new HashMap<>();
+                current.put("label", app.loadLabel(manager).toString());
+                current.put("icon", iconData);
+                current.put("package", app.packageName);
+                result.success(current);
+
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getAllApps(MethodChannel.Result result) {

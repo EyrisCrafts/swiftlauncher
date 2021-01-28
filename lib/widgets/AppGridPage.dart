@@ -9,13 +9,16 @@ class AppGridPage extends StatelessWidget {
   final Function(int) onDragEnded;
   final Function onAppOpening;
   final Function(int, AppInfo) onAccepted;
+  final bool isSubTitle;
+
   const AppGridPage(
       {Key key,
       @required this.apps,
       this.onDragStarted,
       this.onDragEnded,
       this.onAccepted,
-      this.onAppOpening})
+      this.onAppOpening,
+      this.isSubTitle = true})
       : super(key: key);
 
   @override
@@ -31,6 +34,7 @@ class AppGridPage extends StatelessWidget {
         () => onDragStarted(index),
         dragEnded: () => onDragEnded(index),
         onAppOpening: onAppOpening,
+        isSubTitle: isSubTitle,
       ),
       // BaseDraggableApp(appInfo: apps[index], dragStarted: onDragStarted),
     );
