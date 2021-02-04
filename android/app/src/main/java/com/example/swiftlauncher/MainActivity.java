@@ -83,11 +83,26 @@ public class MainActivity extends FlutterActivity {
                             appsStream.success('A' + pkgName);
                         }
                     }
+                }
+            } catch (Exception e) {
+            }
+        }
+    };
 
-//                    if (appChangeResult != null) {
-//                        appChangeResult.success(pkgName);
-//                    }
-
+    BroadcastReceiver receiverScreenStatus = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent intent) {
+            try {
+                final String action = intent.getAction();
+                if (action != null) {
+                    if (mEvents != null) {
+                        if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+                            mEvents.success(true);
+                        }
+//                        else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
+//                            mEvents.success(true);
+//                        }
+                    }
                 }
             } catch (Exception e) {
             }
@@ -96,11 +111,11 @@ public class MainActivity extends FlutterActivity {
 
     @Override
     protected void onStop() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            if (!isScreenOn() && mEvents != null) {
-                mEvents.success(true);
-            }
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+//            if (!isScreenOn() && mEvents != null) {
+//                mEvents.success(true);
+//            }
+//        }
         super.onStop();
     }
 
@@ -191,14 +206,10 @@ public class MainActivity extends FlutterActivity {
         filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         filter.addDataScheme("package");
         getApplicationContext().registerReceiver(onAppListChangedReciever, filter);
-    }
 
-
-    void registerReceiver() {
-        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
-        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
-        filter.addDataScheme("package_name");
+        IntentFilter screenFilter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+        screenFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        getApplicationContext().registerReceiver(receiverScreenStatus, screenFilter);
     }
 
     public void onReceive(Context context, Intent intent) {
@@ -383,35 +394,51 @@ public class MainActivity extends FlutterActivity {
 
     private void getAllApps(MethodChannel.Result result) {
 
-        Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        new AsyncTask() {
+            MethodChannel.Result mResult;
+            List<Map<String, Object>> _output ;
 
-        PackageManager manager = getApplicationContext().getPackageManager();
-        List<ResolveInfo> resList = manager.queryIntentActivities(intent, 0);
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                mResult = (Result) objects[0];
+                Intent intent = new Intent(Intent.ACTION_MAIN, null);
+                intent.addCategory(Intent.CATEGORY_LAUNCHER);
 
-        List<Map<String, Object>> _output = new ArrayList<>();
+                PackageManager manager = getApplicationContext().getPackageManager();
+                List<ResolveInfo> resList = manager.queryIntentActivities(intent, 0);
 
-        for (ResolveInfo resInfo : resList) {
-            try {
-                ApplicationInfo app = manager.getApplicationInfo(
-                        resInfo.activityInfo.packageName, PackageManager.GET_META_DATA);
-                if (manager.getLaunchIntentForPackage(app.packageName) != null) {
+                _output = new ArrayList<>();
 
-                    byte[] iconData = convertToBytes(getBitmapFromDrawable(app.loadIcon(manager)),
-                            Bitmap.CompressFormat.PNG, 100);
+                for (ResolveInfo resInfo : resList) {
+                    try {
+                        ApplicationInfo app = manager.getApplicationInfo(
+                                resInfo.activityInfo.packageName, PackageManager.GET_META_DATA);
+                        if (manager.getLaunchIntentForPackage(app.packageName) != null) {
 
-                    Map<String, Object> current = new HashMap<>();
-                    current.put("label", app.loadLabel(manager).toString());
-                    current.put("icon", iconData);
-                    current.put("package", app.packageName);
-                    _output.add(current);
+                            byte[] iconData = convertToBytes(getBitmapFromDrawable(app.loadIcon(manager)),
+                                    Bitmap.CompressFormat.PNG, 100);
+
+                            Map<String, Object> current = new HashMap<>();
+                            current.put("label", app.loadLabel(manager).toString());
+                            current.put("icon", iconData);
+                            current.put("package", app.packageName);
+                            _output.add(current);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
 
-        result.success(_output);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+                mResult.success(_output);
+            }
+        }.execute(result);
+
     }
 
     public static byte[] convertToBytes(Bitmap image, Bitmap.CompressFormat compressFormat, int quality) {

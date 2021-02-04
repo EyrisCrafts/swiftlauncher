@@ -3,14 +3,18 @@ import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
 import 'package:swiftlauncher/Providers/DrawerChangeProvider.dart';
 import 'package:swiftlauncher/Providers/DrawerHeightProvider.dart';
+import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/screens/MainScreen.dart';
 
 import 'Providers/ProviderDrawerApps.dart';
 import 'Providers/ProviderIconPack.dart';
+import 'Providers/ProviderPageViewIssue.dart';
 import 'Providers/ProviderSettings.dart';
 // import 'package:launcher_assist/launcher_assist.dart';
+import 'package:flutter/scheduler.dart' show timeDilation;
 
 void main() {
+  timeDilation = 0.3;
   runApp(MyApp());
 }
 
@@ -24,6 +28,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => DrawerHeightProvider()),
         ChangeNotifierProvider(create: (context) => DrawerChangeProvider()),
         ChangeNotifierProvider(create: (context) => ProviderSettings()),
+        ChangeNotifierProvider(create: (context) => ProviderPageViewIssue()),
+        ChangeNotifierProvider(create: (context) => ProviderHiddenApps(List())),
         ChangeNotifierProvider(
             create: (context) => ProviderIconPack(Map(), "")),
       ],

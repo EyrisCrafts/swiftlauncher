@@ -80,19 +80,8 @@ class LauncherAssist {
     _channel.invokeMethod("expand");
   }
 
-  // static Future<void> loadIconPack(
-  //     String iconPackage, List<String> listOfApps) async {
-  //   listOfApps.forEach((element) async {
-  //     Uint8List data = await _channel
-  //         .invokeMethod("getIcon", {"pckg": iconPackage, "key": element});
-  //     if (data != null) Global.iconPack.addEntries([MapEntry(element, data)]);
-  //   });
-  //   return;
-  // }
-
   static Future<Map<String, Uint8List>> loadIconPack(
       String iconPackage, List<String> listOfApps) async {
-    log("loading iconpack");
     String toSendPackages = "";
     listOfApps.forEach((element) async {
       toSendPackages += element + ",";
@@ -100,10 +89,6 @@ class LauncherAssist {
     toSendPackages = toSendPackages.substring(0, toSendPackages.length - 1);
     List<dynamic> data = await _channel
         .invokeMethod("getIcon", {"pckg": iconPackage, "key": toSendPackages});
-    log("list of icons ${data.length}");
-    int len = data.where((element) => element == null).toList().length;
-    log("number of icons not found $len");
-    //TODO zip
     List<MapEntry<String, Uint8List>> aa = List();
     for (int i = 0; i < listOfApps.length; i++) {
       aa.add(MapEntry(listOfApps[i], data[i]));
@@ -159,7 +144,7 @@ class AppInfo {
   final String label;
 
   /// App icon
-  final Uint8List icon;
+  Uint8List icon;
 
   AppInfo.fromMap(Map<String, dynamic> data)
       : package = data['package'],

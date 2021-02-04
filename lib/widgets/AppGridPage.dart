@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 import 'package:swiftlauncher/widgets/BaseDraggableApp.dart';
@@ -36,7 +38,47 @@ class AppGridPage extends StatelessWidget {
         onAppOpening: onAppOpening,
         isSubTitle: isSubTitle,
       ),
-      // BaseDraggableApp(appInfo: apps[index], dragStarted: onDragStarted),
     );
+    // if (apps.length % 20 != 0) return Container();
+
+    // return ListView.builder(
+    //     itemCount: 5,
+    //     physics: NeverScrollableScrollPhysics(),
+    //     itemBuilder: (context, index) => Row(
+    //           children: [
+    //             DraggableApp(
+    //               apps[index * 4],
+    //               (appinfo) => onAccepted(index, appinfo),
+    //               () => onDragStarted(index),
+    //               dragEnded: () => onDragEnded(index),
+    //               onAppOpening: onAppOpening,
+    //               isSubTitle: isSubTitle,
+    //             ),
+    //             DraggableApp(
+    //               apps[(index * 4) + 1],
+    //               (appinfo) => onAccepted(index, appinfo),
+    //               () => onDragStarted(index),
+    //               dragEnded: () => onDragEnded(index),
+    //               onAppOpening: onAppOpening,
+    //               isSubTitle: isSubTitle,
+    //             ),
+    //             DraggableApp(
+    //               apps[(index * 4) + 2],
+    //               (appinfo) => onAccepted(index, appinfo),
+    //               () => onDragStarted(index),
+    //               dragEnded: () => onDragEnded(index),
+    //               onAppOpening: onAppOpening,
+    //               isSubTitle: isSubTitle,
+    //             ),
+    //             DraggableApp(
+    //               apps[(index * 4) + 3],
+    //               (appinfo) => onAccepted(index, appinfo),
+    //               () => onDragStarted(index),
+    //               dragEnded: () => onDragEnded(index),
+    //               onAppOpening: onAppOpening,
+    //               isSubTitle: isSubTitle,
+    //             ),
+    //           ],
+    //         ));
   }
 }

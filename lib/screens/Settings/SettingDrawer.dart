@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
+import 'package:swiftlauncher/screens/Settings/SettingDrawerHiddenApps.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
 import '../../Global.dart';
@@ -48,6 +49,19 @@ class _SettingDrawerState extends State<SettingDrawer> {
           SizedBox(
             height: 17,
           ),
+          ListTile(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => SettingDrawerHiddenApps()));
+            },
+            title: Text("Hidden Apps"),
+            trailing: Icon(Icons.arrow_forward_ios),
+          ),
+          SizedBox(
+            height: 17,
+          ),
           Container(
             width: size.width,
             padding: const EdgeInsets.only(left: 17),
@@ -82,7 +96,7 @@ class _SettingDrawerState extends State<SettingDrawer> {
                 },
               ),
             ),
-          )
+          ),
         ],
       ),
     );

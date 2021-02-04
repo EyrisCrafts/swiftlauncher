@@ -1,7 +1,9 @@
 import 'dart:developer';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
-
+import 'package:image/image.dart' as IMG;
+import 'package:path_provider/path_provider.dart';
 import 'package:swiftlauncher/Interfaces/DrawerSync.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/widgets/AppGridPage.dart';
@@ -26,6 +28,7 @@ class MainScreen extends StatefulWidget {
 
 List<AppInfo> allApps;
 Map<String, Uint8List> iconPack;
+Directory dr;
 
 class _MainScreenState extends State<MainScreen> {
   var wallpaper;
@@ -57,7 +60,7 @@ class _MainScreenState extends State<MainScreen> {
     filteredApps = List();
     isRemoveAppVis = false;
     _pageController = PageController();
-
+    allApps = List();
     mainApps = List();
     draggingAppIndex = -1;
     setupWallpaper();
@@ -66,8 +69,7 @@ class _MainScreenState extends State<MainScreen> {
     isSearchMode = false;
     initialization = initializeApps();
     LauncherAssist.initAppsChangeListener();
-    LauncherAssist.handlesCREENChanges().listen((event) {
-      //Screen just closed
+    homeButtonEvents.listen((event) {
       if (isSearchMode) {
         log("closing search mode");
         setState(() {
@@ -76,6 +78,22 @@ class _MainScreenState extends State<MainScreen> {
           _searchController.clear();
           FocusScope.of(context).unfocus();
         });
+      }
+    });
+    LauncherAssist.handlesCREENChanges().listen((event) {
+      //Screen just closed
+      log("SCREEN JUST CLOSED");
+      if (isSearchMode) {
+        log("closing search mode");
+        setState(() {
+          filteredApps.clear();
+          isSearchMode = false;
+          _searchController.clear();
+          FocusScope.of(context).unfocus();
+        });
+      }
+      if (drawerKey.currentState.mounted) {
+        drawerKey.currentState.closeDrawer();
       }
     });
 
@@ -155,7 +173,8 @@ class _MainScreenState extends State<MainScreen> {
 
   AppInfo findApp(String package) {
     for (AppInfo info in allApps) {
-      if (info.label.toLowerCase().contains(package.toLowerCase())) {
+      if (info != null &&
+          info.label.toLowerCase().contains(package.toLowerCase())) {
         log("found ${info.package}");
         return info;
       }
@@ -163,12 +182,34 @@ class _MainScreenState extends State<MainScreen> {
     return null;
   }
 
+  Uint8List resizeImage(Uint8List data) {
+    Uint8List resizedData = data;
+    IMG.Image img = IMG.decodeImage(data);
+    IMG.Image resized = IMG.copyResize(img, width: 50, height: 50);
+    resizedData = IMG.encodePng(resized);
+    return resizedData;
+  }
+
   Future<int> initializeApps() async {
     allApps = await LauncherAssist.getAllApps();
+    // List<AppInfo> temp = await LauncherAssist.getAllApps();
+    // allApps.addAll(temp.take(5));
+    // allApps.addAll(List.generate(20, (index) => null));
+    allApps.map((e) {
+      e.icon = resizeImage(e.icon);
+    });
+    allApps.forEach((element) {
+      precacheImage(MemoryImage(element.icon), context);
+    });
+    // dr = await getTemporaryDirectory();
+    // File(dr.path + "/aa").writeAsBytes(temp.first.icon, flush: true);
+    // log("File ${await File(dr.path + "/aa").exists()}");
     loadDrawerSettings();
     initializeMainApps();
     return 2;
   }
+
+  setupIconInFile() async {}
 
   setupWallpaper() async {
     if (await Permission.storage.request().isGranted) {
@@ -183,9 +224,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    log("building mainscreen");
     Size size = MediaQuery.of(context).size;
     return WillPopScope(
-      //TODO Close the search on back press
       onWillPop: () {
         log("Back pressed");
         if (isSearchMode) {
@@ -195,6 +236,9 @@ class _MainScreenState extends State<MainScreen> {
             _searchController.clear();
             FocusScope.of(context).unfocus();
           });
+        }
+        if (drawerKey.currentState.mounted) {
+          drawerKey.currentState.closeDrawer();
         }
         return Future.value(false);
       },
@@ -226,7 +270,6 @@ class _MainScreenState extends State<MainScreen> {
               future: initialization,
               builder: (context, snapshot) {
                 if (snapshot == null || !snapshot.hasData) return Container();
-                log("Loading drawer ${allApps.length}");
                 return AppDrawer(
                   draggingApp: (index) {
                     draggingFromDrawer = true;
@@ -494,7 +537,6 @@ class _MainScreenState extends State<MainScreen> {
         //TODO Change to bottom center
         alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
         child: Consumer<ProviderSettings>(builder: (context, value, child) {
-          log("search is ${value.getIsSearchEnable}");
           if (value.getIsSearchEnable) {
             return GestureDetector(
               onTap: () {

@@ -1,11 +1,14 @@
 import 'dart:developer';
+import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
 import 'package:swiftlauncher/Providers/ProviderIconPack.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
+import 'package:swiftlauncher/screens/MainScreen.dart';
 
 class DraggableApp extends StatefulWidget {
   final AppInfo appInfo;
@@ -41,7 +44,13 @@ class _DraggableAppState extends State<DraggableApp> {
                     Container(
                         height: 40,
                         width: 40,
-                        child: Image.memory(candidateData[0].icon)),
+                        child: Image.memory(
+                          candidateData[0].icon,
+                          height: 40,
+                          width: 40,
+                          cacheHeight: 40,
+                          cacheWidth: 40,
+                        )),
                     if (widget.isSubTitle)
                       Container(
                         height: 15,
@@ -80,6 +89,7 @@ class _DraggableAppState extends State<DraggableApp> {
   }
 
   _buildDraggable() {
+    // log("Building draggable");
     return GestureDetector(
       // onTap: () {
       // log("opening app");
@@ -135,17 +145,25 @@ class _DraggableAppState extends State<DraggableApp> {
                     builder: (context, value, child) => Container(
                         height: 50,
                         width: 50,
-                        child: Image.memory(
-                            value.getIcon(widget.appInfo.package) ??
-                                widget.appInfo.icon)),
-                  ),
-                  //                Container(
-                  // height: 50,
-                  // width: 50,
-                  // child: Image.memory(
-                  //     Global.iconPack[widget.appInfo.package] ??
-                  //         widget.appInfo.icon)),
 
+                        // child: CachedNetworkImage(
+                        //   imageUrl: "http://via.placeholder.com/350x150",
+                        //   placeholder: (context, url) =>
+                        //       CircularProgressIndicator(),
+                        //   errorWidget: (context, url, error) => Icon(Icons.error),
+                        // ),
+                        // child: Image.file(File(dr.path + "/aa")),
+
+                        child: Image.memory(
+                          value.getIcon(widget.appInfo.package) ??
+                              widget.appInfo.icon,
+                          width: 50,
+                          height: 50,
+                        )
+
+                        // child: Icon(Icons.ac_unit),
+                        ),
+                  ),
                   if (widget.isSubTitle)
                     Container(
                       height: 15,
@@ -172,7 +190,11 @@ class _DraggableAppState extends State<DraggableApp> {
                     Container(
                         height: 40,
                         width: 40,
-                        child: Image.memory(widget.appInfo.icon)),
+                        child: Image.memory(
+                          widget.appInfo.icon,
+                          width: 40,
+                          height: 40,
+                        )),
                     if (widget.isSubTitle)
                       Container(
                         height: 10,
