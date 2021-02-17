@@ -4,12 +4,14 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:image/image.dart' as IMG;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swiftlauncher/Interfaces/DrawerSync.dart';
+import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/widgets/AppGridPage.dart';
 import 'package:swiftlauncher/widgets/SearchAppIcon.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Utils.dart';
@@ -28,6 +30,7 @@ class MainScreen extends StatefulWidget {
 
 List<AppInfo> allApps;
 Map<String, Uint8List> iconPack;
+List<String> hiddenApps;
 Directory dr;
 
 class _MainScreenState extends State<MainScreen> {
@@ -51,13 +54,13 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     currentPageIndex = 0;
-
     iconPack = Map();
     draggingFromDrawer = false;
     _searchController = TextEditingController();
     _searchFocus = FocusNode();
     drawerKey = GlobalKey<AppDrawerState>();
     filteredApps = List();
+    hiddenApps = List();
     isRemoveAppVis = false;
     _pageController = PageController();
     allApps = List();
@@ -123,6 +126,15 @@ class _MainScreenState extends State<MainScreen> {
         drawerKey.currentState.addNewApp(pkgname);
       }
     });
+    loadPrefs();
+  }
+
+  loadPrefs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> hiddenApps = prefs.getStringList('hiddenapps') ?? List();
+    if (hiddenApps.length != 0)
+      Provider.of<ProviderHiddenApps>(context, listen: false)
+          .setHiddenApps(hiddenApps);
   }
 
   loadDrawerSettings() {

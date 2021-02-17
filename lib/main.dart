@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
 import 'package:swiftlauncher/Providers/DrawerChangeProvider.dart';
 import 'package:swiftlauncher/Providers/DrawerHeightProvider.dart';
@@ -13,13 +16,23 @@ import 'Providers/ProviderSettings.dart';
 // import 'package:launcher_assist/launcher_assist.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   timeDilation = 0.3;
-  runApp(MyApp());
+  // SharedPreferences prefs = await SharedPreferences.getInstance();
+  // List<String> hiddenApps = prefs.getStringList('hiddenapps') ?? List();
+  // log("HIDDEN APPS ARE ${hiddenApps.length}");
+  runApp(MyApp(
+      // hiddenapps: hiddenApps,
+      ));
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
+  // final List<String> hiddenapps;
+
+  // const MyApp({Key key, @required this.hiddenapps}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -29,7 +42,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => DrawerChangeProvider()),
         ChangeNotifierProvider(create: (context) => ProviderSettings()),
         ChangeNotifierProvider(create: (context) => ProviderPageViewIssue()),
-        ChangeNotifierProvider(create: (context) => ProviderHiddenApps(List())),
+        ChangeNotifierProvider(
+          create: (context) => ProviderHiddenApps(hiddenApps),
+        ),
         ChangeNotifierProvider(
             create: (context) => ProviderIconPack(Map(), "")),
       ],

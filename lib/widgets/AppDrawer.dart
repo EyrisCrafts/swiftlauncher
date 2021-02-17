@@ -2,22 +2,19 @@ import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:swiftlauncher/Interfaces/DrawerSync.dart';
+import 'package:provider/provider.dart';
 import 'package:swiftlauncher/MyCopies/MyPageView.dart';
 import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/Providers/ProviderPageViewIssue.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/screens/MainScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:hardware_buttons/hardware_buttons.dart';
 import 'package:swiftlauncher/Providers/DrawerChangeProvider.dart';
 import 'package:swiftlauncher/Providers/DrawerHeightProvider.dart';
 import 'package:swiftlauncher/Providers/ProviderIconPack.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
 import 'package:swiftlauncher/screens/Settings/SettingScreen.dart';
-import 'package:swiftlauncher/widgets/BaseDraggableApp.dart';
-import 'package:swiftlauncher/widgets/CustomDrawer.dart';
 
 import '../Global.dart';
 import 'AppGridPage.dart';
@@ -50,6 +47,8 @@ class AppDrawer extends StatefulWidget {
   AppDrawerState createState() => AppDrawerState();
 }
 
+List<AppInfo> drawerApps;
+
 class AppDrawerState extends State<AppDrawer> {
   // double customHeight;
   bool animationEnded;
@@ -58,7 +57,6 @@ class AppDrawerState extends State<AppDrawer> {
   PageController _pageController;
   // int currentPageIndex;
   int numberOfPages;
-  List<AppInfo> drawerApps;
   int draggingIndex;
   bool isDragMode;
   PageController _verticalPageController;
@@ -102,10 +100,10 @@ class AppDrawerState extends State<AppDrawer> {
     drawerApps.addAll(widget.apps);
   }
 
-  setDrawer(int number, List<AppInfo> drawerApps) {
+  setDrawer(int number, List<AppInfo> mdrawerApps) {
     setState(() {
       numberOfPages = number;
-      this.drawerApps = drawerApps;
+      drawerApps = mdrawerApps;
     });
   }
 
@@ -139,11 +137,11 @@ class AppDrawerState extends State<AppDrawer> {
           .addNewIcon(pkgName, bitmap);
     }
     //Add to next empty drawer
-    for (int i = 0; i < this.drawerApps.length; i++) {
-      if (this.drawerApps[i] == null) {
+    for (int i = 0; i < drawerApps.length; i++) {
+      if (drawerApps[i] == null) {
         //replace with new app
-        this.drawerApps[i] = appInfo;
-        widget.syncApps(this.drawerApps);
+        drawerApps[i] = appInfo;
+        widget.syncApps(drawerApps);
 
         break;
       }
@@ -408,7 +406,7 @@ class AppDrawerState extends State<AppDrawer> {
                                       numberOfPages++;
                                       drawerApps.addAll(
                                           List.generate(20, (index) => null));
-                                      widget.syncApps(this.drawerApps);
+                                      widget.syncApps(drawerApps);
                                       log("added page");
                                     });
                                     break;
@@ -421,7 +419,7 @@ class AppDrawerState extends State<AppDrawer> {
                                         drawerApps.removeRange(
                                             pg * 20, (pg * 20) + 20);
                                         numberOfPages--;
-                                        widget.syncApps(this.drawerApps);
+                                        widget.syncApps(drawerApps);
                                       });
                                     }
                                     break;
@@ -476,8 +474,39 @@ class AppDrawerState extends State<AppDrawer> {
               },
               itemCount: numberOfPages,
               itemBuilder: (context, pageIndex) => Consumer<ProviderHiddenApps>(
-                    builder: (fcontext, hiddenprovider, fchild) =>
-                        Consumer<ProviderSettings>(
+                      builder: (fcontext, hiddenprovider, fchild) {
+                    log("rebuilding hidden apps");
+                    //TODO 1. Set to null instead of removing
+                    //TODO 2. In case the hidden is turned off, add to drawer app
+
+                    // drawerApps.removeWhere((element) =>
+                    //     element != null &&
+                    //     hiddenprovider.getHiddenApps.contains(element.package));
+
+                    for (int j = 0;
+                        j < hiddenprovider.recentReAdd.length;
+                        j++) {
+                      for (int i = 0; i < drawerApps.length; i++) {
+                        if (drawerApps[i] == null) {
+                          drawerApps[i] = hiddenprovider.recentReAdd[j];
+
+                          break;
+                        }
+                      }
+                    }
+                    Provider.of<ProviderHiddenApps>(context, listen: false)
+                        .removeRecentApp();
+
+                    for (int i = 0; i < drawerApps.length; i++) {
+                      if (drawerApps[i] != null &&
+                          hiddenprovider.getHiddenApps
+                              .contains(drawerApps[i].package)) {
+                        drawerApps[i] = null;
+                        break;
+                      }
+                    }
+
+                    return Consumer<ProviderSettings>(
                       builder: (context, value, child) => AppGridPage(
                         apps: drawerApps
                             .getRange(
@@ -510,7 +539,7 @@ class AppDrawerState extends State<AppDrawer> {
                           if (drawerApps[actualIndex] == null) {
                             log("swapping places $draggingIndex and $actualIndex");
                             swapPlaces(draggingIndex, actualIndex);
-                            widget.syncApps(this.drawerApps);
+                            widget.syncApps(drawerApps);
                             setState(() {});
                           }
                         },
@@ -519,8 +548,8 @@ class AppDrawerState extends State<AppDrawer> {
                         },
                         isSubTitle: value.drawerAppTextVis,
                       ),
-                    ),
-                  )),
+                    );
+                  })),
         ),
         Container(
             height: 50,
@@ -547,10 +576,16 @@ class AppDrawerState extends State<AppDrawer> {
                           return true;
                         },
                         builder: (context, candidates, rejects) {
-                          return Icon(Icons.circle,
-                              color: value.getCurrentPage == i
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.4));
+                          return AnimatedContainer(
+                            height: 25,
+                            width: 25,
+                            duration: Duration(milliseconds: 2000),
+                            decoration: BoxDecoration(
+                                color: value.getCurrentPage == i
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(30)),
+                          );
                         },
                       ),
                     ),

@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
+import 'package:provider/provider.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/screens/Settings/SettingDrawerHiddenApps.dart';
 import 'package:toggle_switch/toggle_switch.dart';

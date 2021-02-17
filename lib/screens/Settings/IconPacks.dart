@@ -2,8 +2,8 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
 import 'package:hardware_buttons/hardware_buttons.dart';
+import 'package:provider/provider.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Models/IconPack.dart';
 import 'package:swiftlauncher/Providers/ProviderIconPack.dart';

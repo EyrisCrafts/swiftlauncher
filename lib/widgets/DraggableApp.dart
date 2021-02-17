@@ -1,14 +1,9 @@
 import 'dart:developer';
-import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_size/flutter_keyboard_size.dart';
-import 'package:swiftlauncher/Global.dart';
-import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
+import 'package:provider/provider.dart';
 import 'package:swiftlauncher/Providers/ProviderIconPack.dart';
 import 'package:swiftlauncher/Utils/LauncherAssist.dart';
-import 'package:swiftlauncher/screens/MainScreen.dart';
 
 class DraggableApp extends StatefulWidget {
   final AppInfo appInfo;
@@ -17,8 +12,12 @@ class DraggableApp extends StatefulWidget {
   final Function() dragEnded;
   final bool isSubTitle;
   final Function onAppOpening;
+  final bool isSwiftApp;
   DraggableApp(this.appInfo, this.onAccept, this.dragStarted,
-      {this.dragEnded, this.isSubTitle = true, this.onAppOpening});
+      {this.dragEnded,
+      this.isSubTitle = true,
+      this.onAppOpening,
+      this.isSwiftApp = false});
 
   @override
   _DraggableAppState createState() => _DraggableAppState();
@@ -97,10 +96,10 @@ class _DraggableAppState extends State<DraggableApp> {
       // },
       onTapDown: (details) {
         log("tap down details");
-        // if (!isVis)
-        //   setState(() {
-        //     isVis = true;
-        //   });
+        if (!isVis && widget.isSwiftApp)
+          setState(() {
+            isVis = true;
+          });
       },
       onTapUp: (detials) {
         log("Opening app");
@@ -109,10 +108,10 @@ class _DraggableAppState extends State<DraggableApp> {
         }
         LauncherAssist.launchApp(widget.appInfo);
 
-        // if (isVis)
-        //   setState(() {
-        //     isVis = false;
-        //   });
+        if (isVis && widget.isSwiftApp)
+          setState(() {
+            isVis = false;
+          });
       },
       child: AnimatedOpacity(
         duration: Duration(milliseconds: 400),
@@ -145,24 +144,12 @@ class _DraggableAppState extends State<DraggableApp> {
                     builder: (context, value, child) => Container(
                         height: 50,
                         width: 50,
-
-                        // child: CachedNetworkImage(
-                        //   imageUrl: "http://via.placeholder.com/350x150",
-                        //   placeholder: (context, url) =>
-                        //       CircularProgressIndicator(),
-                        //   errorWidget: (context, url, error) => Icon(Icons.error),
-                        // ),
-                        // child: Image.file(File(dr.path + "/aa")),
-
                         child: Image.memory(
                           value.getIcon(widget.appInfo.package) ??
                               widget.appInfo.icon,
                           width: 50,
                           height: 50,
-                        )
-
-                        // child: Icon(Icons.ac_unit),
-                        ),
+                        )),
                   ),
                   if (widget.isSubTitle)
                     Container(
