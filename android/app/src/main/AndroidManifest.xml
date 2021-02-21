@@ -6,13 +6,18 @@
          additional functionality it is fine to subclass or reimplement
          FlutterApplication and put your custom class here. -->
          <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+         <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+         <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
          <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
          <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
          <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="swiftlauncher"
+        android:label="Swift Launcher"
+        android:requestLegacyExternalStorage="true"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"

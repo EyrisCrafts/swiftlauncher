@@ -1,6 +1,9 @@
 import 'dart:developer';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -25,6 +28,33 @@ class LauncherAssist {
       return app1.label.compareTo(app2.label);
     });
     return toReturn;
+  }
+
+  static Future<PickedFile> pickImageFromGallery() async {
+    // final picker = ImagePicker();
+    // final pickedFile = await pickImageFromGallery();
+    // return pickedFile;
+    final picker = ImagePicker();
+    PickedFile result = await picker.getImage(source: ImageSource.gallery);
+
+    if (result != null) {
+      log("path of new wallpaper proper one ${result.path}");
+      // File file = File(result.files.single.path);
+      return result;
+      // return result.path;
+    } else {
+      return null;
+      // User canceled the picker
+    }
+  }
+
+  // it looked for /storage/emulated/0/Android/data/com.example.swiftlauncher/files    /data/user/0/com.example.swiftlauncher/cache/image_picker799247186.jpg
+  static Future<Uint8List> setWallpaper(int i, String path) async {
+    String str = await _channel
+        .invokeMethod('wallpaper', {'i': i.toString(), 'path': path});
+    log("LOCKSCREEN ANSWER IS $str");
+    if (i == 1 && str == "result") return await getWallpaper();
+    return null;
   }
 
   static Stream<dynamic> handlesCREENChanges() {

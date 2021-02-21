@@ -10,6 +10,7 @@ import 'package:swiftlauncher/Interfaces/DrawerSync.dart';
 import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/widgets/AppGridPage.dart';
+import 'package:swiftlauncher/widgets/DialogLongPress.dart';
 import 'package:swiftlauncher/widgets/SearchAppIcon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,6 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:swiftlauncher/widgets/AppSettingDialog.dart';
 import 'package:swiftlauncher/widgets/DraggableApp.dart';
 import 'package:hardware_buttons/hardware_buttons.dart';
+import 'package:filesystem_picker/filesystem_picker.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -257,7 +259,8 @@ class _MainScreenState extends State<MainScreen> {
       child: Container(
         decoration: BoxDecoration(
             image: wallpaper != null
-                ? DecorationImage(image: MemoryImage(wallpaper))
+                ? DecorationImage(
+                    image: MemoryImage(wallpaper), fit: BoxFit.cover)
                 : null),
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -266,6 +269,34 @@ class _MainScreenState extends State<MainScreen> {
           },
           onVerticalDragUpdate: (details) {
             drawerKey.currentState.onVerticalDragUpdate(size, details);
+          },
+          onLongPress: () {
+            log("long pressed");
+            showDialog(
+                context: context,
+                child: DialogLongPress(
+                  onLockScreenChange: () {
+                    //TODO Change Background
+                    LauncherAssist.setWallpaper(2, "path").then((value) {
+                      Navigator.pop(context);
+                      // if (value != null)
+                      //   setState(() {
+                      //     log("Setting new wallpaper");
+                      //     wallpaper = value;
+                      //   });
+                    });
+                  },
+                  onHomeScreenChange: () async {
+                    LauncherAssist.setWallpaper(1, "path").then((value) {
+                      Navigator.pop(context);
+                      if (value != null)
+                        setState(() {
+                          log("Setting new wallpaper");
+                          wallpaper = value;
+                        });
+                    });
+                  },
+                ));
           },
           onTap: () {
             log("clicked me");

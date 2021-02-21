@@ -9,7 +9,9 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -17,6 +19,7 @@ import android.hardware.display.DisplayManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.app.SearchManager;
 
@@ -24,6 +27,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -188,15 +193,137 @@ public class MainActivity extends FlutterActivity {
                                 if (appChangeResult == null) {
                                     appChangeResult = result;
                                 }
-                            } else if (call.method.equals("getAppInfo")){
-                                getAppInfo(result,call.argument("package").toString());
-                            } else if (call.method.equals("uninstallApp")){
+                            } else if (call.method.equals("getAppInfo")) {
+                                getAppInfo(result, call.argument("package").toString());
+                            } else if (call.method.equals("uninstallApp")) {
                                 uninstallApp(call.argument("package").toString());
+                            } else if (call.method.equals("wallpaper")) {
+//                                setWallpaper(call.argument("i").toString(), call.argument("path").toString(), result);
+                                wallpaperResult = result;
+                                pickImage(call.argument("i").toString(),"");
                             }
 
                         }
                 );
     }
+
+    String wallpaperChoice;
+    MethodChannel.Result wallpaperResult;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 3333 && resultCode == RESULT_OK) {
+            Uri selectedImage = data.getData();
+            String[] filePathColumn = {MediaStore.MediaColumns.DATA};
+
+            // Get the cursor
+            Cursor cursor = getContentResolver().query(selectedImage,
+                    filePathColumn, null, null, null);
+            // Move to first row
+            if (cursor != null){
+                cursor.moveToFirst();
+
+                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                String imgpath = cursor.getString(columnIndex);
+                cursor.close();
+                setWallpaper(wallpaperChoice,imgpath);
+            }
+
+        }
+    }
+
+    private void pickImage(String i, String path) {
+        wallpaperChoice = i;
+        Intent galleryIntent = new Intent(Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(galleryIntent, 3333);
+    }
+
+    private String setWallpaper(String i, String path) {
+        String id = i;
+        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+        String res = "";
+          File file = new File(path);
+//        File file = new File(getApplicationContext().getExternalFilesDir(null), path);
+
+        //File file = new File(Activity.ge);
+        //Activity.getDir("flutter", 0).getPath()
+        // set bitmap to wallpaper
+        Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+        if (id.equals("1")) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM);
+                    res = "Home Screen Set Successfully";
+                } else {
+                    res = "To Set Home Screen Requires Api Level 24";
+                }
+
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }finally {
+                wallpaperResult.success("result");
+            }
+        } else if (id.equals("2")) try {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK);
+                res = "Lock Screen Set Successfully";
+            } else {
+                res = "To Set Lock Screen Requires Api Level 24";
+            }
+
+
+        } catch (IOException e) {
+            res = e.toString();
+            e.printStackTrace();
+        }finally {
+            wallpaperResult.success(res);
+//            wallpaperResult.success("result");
+        }
+
+//        else if (id == 3) {
+//            try {
+//                wallpaperManager.setBitmap(bitmap);
+//                res = "Home And Lock Screen Set Successfully";
+//            } catch (IOException e) {
+//                res = e.toString();
+//                e.printStackTrace();
+//            }
+//
+//        }
+//        else if(id==4){
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+//                        != PackageManager.PERMISSION_GRANTED&&
+//                        activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+//                                != PackageManager.PERMISSION_GRANTED) {
+//                    activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+//                }
+//                else {
+//                    Uri uri = Uri.fromFile(file);
+//                    Uri contentURI = getImageContentUri(getActiveContext(), file);
+//
+//                    Intent intent = new Intent(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
+//                    String mime = "image/*";
+//                    if (intent != null) {
+//                        intent.setDataAndType(contentURI, mime);
+//                    }
+//                    try {
+//                        mRegistrar.activity().startActivityForResult(intent,2);
+//                    } catch (ActivityNotFoundException e) {
+//                        //handle error
+//                        res = "Error To Set Wallpaer";
+//                    }
+//                }
+//            }
+//        }
+
+        return res;
+    }
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -361,9 +488,10 @@ public class MainActivity extends FlutterActivity {
         intent.setData(Uri.parse("https://www.youtube.com/results?search_query=" + query));
         startActivity(intent);
     }
+
     private void uninstallApp(String pkg) {
         Intent intent = new Intent(Intent.ACTION_DELETE);
-        intent.setData(Uri.parse("package:"+pkg));
+        intent.setData(Uri.parse("package:" + pkg));
         startActivity(intent);
     }
 
@@ -396,7 +524,7 @@ public class MainActivity extends FlutterActivity {
 
         new AsyncTask() {
             MethodChannel.Result mResult;
-            List<Map<String, Object>> _output ;
+            List<Map<String, Object>> _output;
 
             @Override
             protected Object doInBackground(Object[] objects) {
@@ -456,10 +584,10 @@ public class MainActivity extends FlutterActivity {
     }
 
     private void getWallpaper(MethodChannel.Result result) {
-        if (wallpaperData != null) {
-            result.success(wallpaperData);
-            return;
-        }
+//        if (wallpaperData != null) {
+//            result.success(wallpaperData);
+//            return;
+//        }
 
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
         Drawable wallpaperDrawable = wallpaperManager.getDrawable();
