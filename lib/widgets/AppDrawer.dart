@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:provider/provider.dart';
 import 'package:swiftlauncher/MyCopies/MyPageView.dart';
+import 'package:swiftlauncher/MyCopies/MyScrollBehavior.dart';
 import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/Providers/ProviderPageViewIssue.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
@@ -59,12 +60,12 @@ class AppDrawerState extends State<AppDrawer> {
   int numberOfPages;
   int draggingIndex;
   bool isDragMode;
-  PageController _verticalPageController;
+  PageController verticalPageController;
 
   @override
   void initState() {
     super.initState();
-    _verticalPageController = PageController();
+    verticalPageController = PageController(viewportFraction: 0.99);
     homeButtonEvents.listen((event) {
       log("Home pressed");
       if (isOpen) {
@@ -72,7 +73,7 @@ class AppDrawerState extends State<AppDrawer> {
         Provider.of<DrawerHeightProvider>(context, listen: false)
             .setUpdateHeight(0, 100);
       }
-      _verticalPageController.animateToPage(0,
+      verticalPageController.animateToPage(0,
           duration: Duration(milliseconds: 100), curve: Curves.linear);
     });
     // LauncherAssist.handlesCREENChanges().listen((event) {
@@ -109,11 +110,11 @@ class AppDrawerState extends State<AppDrawer> {
 
   closeDrawer() {
     log("closing drawer");
-    if (_verticalPageController.page == 1.0) {
+    if (verticalPageController.page == 1.0) {
       isOpen = false;
       Provider.of<DrawerHeightProvider>(context, listen: false)
           .setUpdateHeight(0, 100);
-      _verticalPageController.jumpToPage(0);
+      verticalPageController.jumpToPage(0);
     }
   }
 
@@ -232,48 +233,51 @@ class AppDrawerState extends State<AppDrawer> {
             child: Container(),
           ),
         ),
-        MyPageView(
-          controller: _verticalPageController,
-          onPageChanged: (int isPageChanged) {
-            if (isPageChanged == 1) {
-              Provider.of<ProviderPageViewIssue>(context, listen: false)
-                  .setIsDrawerOpen(true);
-            } else {
-              Provider.of<ProviderPageViewIssue>(context, listen: false)
-                  .setIsDrawerOpen(false);
-            }
-          },
-          scrollDirection: Axis.vertical,
-          children: [
-            Container(),
-            ClipRRect(
-                child: Container(
-              width: size.width,
-              height: size.height,
-              child:
-                  Consumer<ProviderSettings>(builder: (context, value, child) {
-                if (value.getDrawerBackground == DrawerBackground.DARK) {
-                  return Container(
-                    // filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    color: Colors.black.withOpacity(0.7),
-                    child: buildMainDrawer(size, context),
-                  );
-                } else if (value.getDrawerBackground ==
-                    DrawerBackground.LIGHT) {
-                  return Container(
-                    // filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    color: Colors.white.withOpacity(0.7),
-                    child: buildMainDrawer(size, context),
-                  );
-                } else {
-                  return BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: buildMainDrawer(size, context),
-                  );
-                }
-              }),
-            )),
-          ],
+        ScrollConfiguration(
+          behavior: CustomScrollBehavior(),
+          child: MyPageView(
+            controller: verticalPageController,
+            onPageChanged: (int isPageChanged) {
+              if (isPageChanged == 1) {
+                Provider.of<ProviderPageViewIssue>(context, listen: false)
+                    .setIsDrawerOpen(true);
+              } else {
+                Provider.of<ProviderPageViewIssue>(context, listen: false)
+                    .setIsDrawerOpen(false);
+              }
+            },
+            scrollDirection: Axis.vertical,
+            children: [
+              Container(),
+              ClipRRect(
+                  child: Container(
+                width: size.width,
+                height: size.height,
+                child: Consumer<ProviderSettings>(
+                    builder: (context, value, child) {
+                  if (value.getDrawerBackground == DrawerBackground.DARK) {
+                    return Container(
+                      // filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      color: Colors.black.withOpacity(0.7),
+                      child: buildMainDrawer(size, context),
+                    );
+                  } else if (value.getDrawerBackground ==
+                      DrawerBackground.LIGHT) {
+                    return Container(
+                      // filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      color: Colors.white.withOpacity(0.7),
+                      child: buildMainDrawer(size, context),
+                    );
+                  } else {
+                    return BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: buildMainDrawer(size, context),
+                    );
+                  }
+                }),
+              )),
+            ],
+          ),
         )
         // Consumer<DrawerHeightProvider>(
         //   builder: (context, value, child) => AnimatedPositioned(

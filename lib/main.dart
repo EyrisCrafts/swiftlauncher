@@ -12,6 +12,7 @@ import 'package:swiftlauncher/screens/MainScreen.dart';
 import 'Providers/ProviderDrawerApps.dart';
 import 'Providers/ProviderIconPack.dart';
 import 'Providers/ProviderPageViewIssue.dart';
+import 'Providers/ProviderSearchApps.dart';
 import 'Providers/ProviderSettings.dart';
 // import 'package:launcher_assist/launcher_assist.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => DrawerChangeProvider()),
         ChangeNotifierProvider(create: (context) => ProviderSettings()),
         ChangeNotifierProvider(create: (context) => ProviderPageViewIssue()),
+        ChangeNotifierProvider(create: (context) => ProviderSearchApps([])),
         ChangeNotifierProvider(
           create: (context) => ProviderHiddenApps(hiddenApps),
         ),

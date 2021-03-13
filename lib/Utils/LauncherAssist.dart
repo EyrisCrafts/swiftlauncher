@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Models/IconPack.dart';
+import 'package:swiftlauncher/Providers/ProviderPreferences.dart';
 
 class LauncherAssist {
   static const MethodChannel _channel = const MethodChannel('launcher_assist');
@@ -78,6 +79,7 @@ class LauncherAssist {
   /// Launches an app using its package name
   static void launchApp(AppInfo packageName) {
     Global.recentApps.add(packageName);
+    ProviderPreferences.saveRecents();
     _channel.invokeMethod("launchApp", {"packageName": packageName.package});
   }
 
@@ -85,6 +87,7 @@ class LauncherAssist {
     //Remove from recent if its there
 
     Global.recentApps.removeWhere((element) => element.package == pkgname);
+    ProviderPreferences.saveRecents();
     _channel.invokeMethod("uninstallApp", {"package": pkgname});
   }
 
@@ -175,6 +178,8 @@ class AppInfo {
 
   /// App icon
   Uint8List icon;
+
+  AppInfo(this.package, this.label, this.icon);
 
   AppInfo.fromMap(Map<String, dynamic> data)
       : package = data['package'],
