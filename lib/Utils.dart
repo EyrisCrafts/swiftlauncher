@@ -9,4 +9,11 @@ class Utils {
     // intent.setPackage('com.google.android.googlequicksearchbox');
     // intent.putExtra(extra, data)
   }
+
+  static callNumber(String number) {
+    Intent intent = Intent();
+    intent.setAction(Action.ACTION_DIAL);
+    intent.setData(Uri.parse('tel:' + number.replaceAll(' ', '')));
+    intent.startActivity();
+  }
 }

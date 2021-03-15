@@ -59,7 +59,6 @@ import android.view.Display;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "launcher_assist";
-    private byte[] wallpaperData = null;
     MethodChannel.Result appChangeResult;
     public static final String STREAM = "screen_status";
     EventChannel.EventSink mEvents;
@@ -213,7 +212,7 @@ public class MainActivity extends FlutterActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 3333 && resultCode == RESULT_OK) {
+        if (requestCode == 3333 && resultCode == RESULT_OK && data.getData() != null) {
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.MediaColumns.DATA};
 
@@ -240,7 +239,7 @@ public class MainActivity extends FlutterActivity {
         startActivityForResult(galleryIntent, 3333);
     }
 
-    private String setWallpaper(String i, String path) {
+    private void setWallpaper(String i, String path) {
         String id = i;
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
         String res = "";
@@ -321,7 +320,7 @@ public class MainActivity extends FlutterActivity {
 //            }
 //        }
 
-        return res;
+//        return res;
     }
 
 
@@ -592,7 +591,7 @@ public class MainActivity extends FlutterActivity {
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
         Drawable wallpaperDrawable = wallpaperManager.getDrawable();
         if (wallpaperDrawable instanceof BitmapDrawable) {
-            wallpaperData = convertToBytes(((BitmapDrawable) wallpaperDrawable).getBitmap(),
+            byte[] wallpaperData = convertToBytes(((BitmapDrawable) wallpaperDrawable).getBitmap(),
                     Bitmap.CompressFormat.JPEG, 100);
             result.success(wallpaperData);
         }

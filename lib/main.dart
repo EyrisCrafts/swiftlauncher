@@ -13,13 +13,18 @@ import 'Providers/ProviderDrawerApps.dart';
 import 'Providers/ProviderIconPack.dart';
 import 'Providers/ProviderPageViewIssue.dart';
 import 'Providers/ProviderSearchApps.dart';
+import 'Providers/ProviderSearchContacts.dart';
+import 'Providers/ProviderSearchMode.dart';
 import 'Providers/ProviderSettings.dart';
 // import 'package:launcher_assist/launcher_assist.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
+import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   timeDilation = 0.3;
+  Size phoneSize = window.physicalSize;
+  log("PHoen size is ${phoneSize.aspectRatio} ${phoneSize.height}");
   // SharedPreferences prefs = await SharedPreferences.getInstance();
   // List<String> hiddenApps = prefs.getStringList('hiddenapps') ?? List();
   // log("HIDDEN APPS ARE ${hiddenApps.length}");
@@ -43,6 +48,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => DrawerChangeProvider()),
         ChangeNotifierProvider(create: (context) => ProviderSettings()),
         ChangeNotifierProvider(create: (context) => ProviderPageViewIssue()),
+        ChangeNotifierProvider(create: (context) => ProviderSearchMode()),
+        ChangeNotifierProvider(create: (context) => ProviderSearchContacts([])),
         ChangeNotifierProvider(create: (context) => ProviderSearchApps([])),
         ChangeNotifierProvider(
           create: (context) => ProviderHiddenApps(hiddenApps),

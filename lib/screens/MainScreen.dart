@@ -11,6 +11,8 @@ import 'package:swiftlauncher/Interfaces/DrawerSync.dart';
 import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/Providers/ProviderPreferences.dart';
 import 'package:swiftlauncher/Providers/ProviderSearchApps.dart';
+import 'package:swiftlauncher/Providers/ProviderSearchContacts.dart';
+import 'package:swiftlauncher/Providers/ProviderSearchMode.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
 import 'package:swiftlauncher/widgets/AppGridPage.dart';
 import 'package:swiftlauncher/widgets/DialogLongPress.dart';
@@ -82,6 +84,10 @@ class _MainScreenState extends State<MainScreen> {
         log("closing search mode");
         Provider.of<ProviderSearchApps>(context, listen: false)
             .clearFilteredApps();
+        Provider.of<ProviderSearchMode>(context, listen: false)
+            .setIsSearchMode(false);
+        Provider.of<ProviderSearchContacts>(context, listen: false)
+            .clearFilteredContacts();
         setState(() {
           // filteredApps.clear();
           isSearchMode = false;
@@ -97,6 +103,10 @@ class _MainScreenState extends State<MainScreen> {
         log("closing search mode");
         Provider.of<ProviderSearchApps>(context, listen: false)
             .clearFilteredApps();
+        Provider.of<ProviderSearchContacts>(context, listen: false)
+            .clearFilteredContacts();
+        Provider.of<ProviderSearchMode>(context, listen: false)
+            .setIsSearchMode(false);
         setState(() {
           // filteredApps.clear();
           isSearchMode = false;
@@ -104,7 +114,7 @@ class _MainScreenState extends State<MainScreen> {
           FocusScope.of(context).unfocus();
         });
       }
-      if (drawerKey.currentState.mounted) {
+      if (drawerKey.currentState != null && drawerKey.currentState.mounted) {
         drawerKey.currentState.closeDrawer();
       }
     });
@@ -260,6 +270,10 @@ class _MainScreenState extends State<MainScreen> {
         if (isSearchMode) {
           Provider.of<ProviderSearchApps>(context, listen: false)
               .clearFilteredApps();
+          Provider.of<ProviderSearchContacts>(context, listen: false)
+              .clearFilteredContacts();
+          Provider.of<ProviderSearchMode>(context, listen: false)
+              .setIsSearchMode(false);
           setState(() {
             // filteredApps.clear();
             isSearchMode = false;
@@ -283,7 +297,7 @@ class _MainScreenState extends State<MainScreen> {
             // _pointerDownPosition = details.position;
           },
           onPointerUp: (details) {
-            log("pointer moved down");
+            // log("pointer moved down");
             // if (details.position.dy - _pointerDownPosition.dy > 50.0 &&
             //     details.position.dx - _pointerDownPosition.dx < 100 &&
             //     !isSearchMode &&
@@ -311,37 +325,45 @@ class _MainScreenState extends State<MainScreen> {
             },
             onLongPress: () {
               log("long pressed");
-              showDialog(
-                  context: context,
-                  builder: (context) => DialogLongPress(
-                        onLockScreenChange: () {
-                          //TODO Change Background
-                          LauncherAssist.setWallpaper(2, "path").then((value) {
-                            Navigator.pop(context);
-                            // if (value != null)
-                            //   setState(() {
-                            //     log("Setting new wallpaper");
-                            //     wallpaper = value;
-                            //   });
-                          });
-                        },
-                        onHomeScreenChange: () async {
-                          LauncherAssist.setWallpaper(1, "path").then((value) {
-                            Navigator.pop(context);
-                            if (value != null)
-                              setState(() {
-                                log("Setting new wallpaper");
-                                wallpaper = value;
-                              });
-                          });
-                        },
-                      ));
+              if (!Provider.of<ProviderSearchMode>(context, listen: false)
+                  .getIsSearchMode)
+                showDialog(
+                    context: context,
+                    builder: (context) => DialogLongPress(
+                          onLockScreenChange: () {
+                            //TODO Change Background
+                            LauncherAssist.setWallpaper(2, "path")
+                                .then((value) {
+                              Navigator.pop(context);
+                              // if (value != null)
+                              //   setState(() {
+                              //     log("Setting new wallpaper");
+                              //     wallpaper = value;
+                              //   });
+                            });
+                          },
+                          onHomeScreenChange: () async {
+                            LauncherAssist.setWallpaper(1, "path")
+                                .then((value) {
+                              Navigator.pop(context);
+                              if (value != null)
+                                setState(() {
+                                  log("Setting new wallpaper");
+                                  wallpaper = value;
+                                });
+                            });
+                          },
+                        ));
             },
             onTap: () {
               log("clicked me");
               if (isSearchMode) {
                 Provider.of<ProviderSearchApps>(context, listen: false)
                     .clearFilteredApps();
+                Provider.of<ProviderSearchContacts>(context, listen: false)
+                    .clearFilteredContacts();
+                Provider.of<ProviderSearchMode>(context, listen: false)
+                    .setIsSearchMode(false);
                 setState(() {
                   // filteredApps.clear();
                   isSearchMode = false;
@@ -450,7 +472,7 @@ class _MainScreenState extends State<MainScreen> {
                                         _pointerDownPosition = details.position;
                                       },
                                       onPointerUp: (details) {
-                                        log("pointer moved down");
+                                        // log("pointer moved down");
                                         if (details.position.dy -
                                                     _pointerDownPosition.dy >
                                                 50.0 &&
@@ -662,6 +684,9 @@ class _MainScreenState extends State<MainScreen> {
                     .addApps(Global.recentApps);
                 // filteredApps.addAll(Global.recentApps);
                 _searchFocus.requestFocus();
+
+                Provider.of<ProviderSearchMode>(context, listen: false)
+                    .setIsSearchMode(true);
                 setState(() {
                   isSearchMode = true;
                 });
@@ -715,7 +740,12 @@ class _MainScreenState extends State<MainScreen> {
                             Provider.of<ProviderSearchApps>(context,
                                     listen: false)
                                 .clearFilteredApps();
-
+                            Provider.of<ProviderSearchContacts>(context,
+                                    listen: false)
+                                .clearFilteredContacts();
+                            Provider.of<ProviderSearchMode>(context,
+                                    listen: false)
+                                .setIsSearchMode(false);
                             setState(() {
                               // filteredApps.clear();
                               isSearchMode = false;
@@ -728,33 +758,162 @@ class _MainScreenState extends State<MainScreen> {
                             width: !isSearchMode ? 1 : size.width,
                             child: !isSearchMode
                                 ? Container()
-                                : Consumer<ProviderSearchApps>(
-                                    builder: (context, value, child) =>
-                                        GridView.builder(
-                                            gridDelegate:
-                                                SliverGridDelegateWithFixedCrossAxisCount(
-                                                    crossAxisCount: 4),
-                                            itemCount: value.getFiltered.length,
-                                            itemBuilder: (context, index) =>
-                                                AppIcon(
-                                                  app: value.getFiltered[index],
-                                                  onAppOpening: () {
-                                                    if (isSearchMode) {
-                                                      Provider.of<ProviderSearchApps>(
-                                                              context,
-                                                              listen: false)
-                                                          .clearFilteredApps();
-                                                      setState(() {
-                                                        // filteredApps.clear();
-                                                        isSearchMode = false;
-                                                        _searchController
-                                                            .clear();
-                                                        FocusScope.of(context)
-                                                            .unfocus();
-                                                      });
-                                                    }
-                                                  },
-                                                )),
+                                : CustomScrollView(
+                                    slivers: [
+                                      Consumer<ProviderSearchApps>(
+                                        builder: (context, value, child) =>
+                                            SliverGrid(
+                                          gridDelegate:
+                                              SliverGridDelegateWithFixedCrossAxisCount(
+                                                  crossAxisCount: 4),
+                                          delegate: SliverChildBuilderDelegate(
+                                              (context, index) => AppIcon(
+                                                    app: value
+                                                        .getFiltered[index],
+                                                    onAppOpening: () {
+                                                      if (isSearchMode) {
+                                                        Provider.of<ProviderSearchApps>(
+                                                                context,
+                                                                listen: false)
+                                                            .clearFilteredApps();
+                                                        Provider.of<ProviderSearchContacts>(
+                                                                context,
+                                                                listen: false)
+                                                            .clearFilteredContacts();
+                                                        Provider.of<ProviderSearchMode>(
+                                                                context,
+                                                                listen: false)
+                                                            .setIsSearchMode(
+                                                                false);
+                                                        setState(() {
+                                                          isSearchMode = false;
+                                                          _searchController
+                                                              .clear();
+                                                          FocusScope.of(context)
+                                                              .unfocus();
+                                                        });
+                                                      }
+                                                    },
+                                                  ),
+                                              childCount:
+                                                  value.getFiltered.length),
+                                        ),
+                                      ),
+                                      Consumer<ProviderSearchContacts>(
+                                        builder: (context, prov, child) =>
+                                            SliverFixedExtentList(
+                                                delegate:
+                                                    SliverChildBuilderDelegate(
+                                                        (context, index) {
+                                                  return Container(
+                                                    alignment: Alignment.center,
+                                                    child: GestureDetector(
+                                                      onTap: () async {
+                                                        log("opening ${prov.getFiltered[index].displayName}");
+                                                        // await ContactsService
+                                                        //     .openExistingContact(
+                                                        //         prov.getFiltered[
+                                                        //             index]);
+
+                                                        Utils.callNumber(prov
+                                                            .getFiltered[index]
+                                                            .phones
+                                                            .first
+                                                            .value);
+                                                        if (isSearchMode) {
+                                                          log("closing search mode");
+                                                          Provider.of<ProviderSearchApps>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .clearFilteredApps();
+                                                          Provider.of<ProviderSearchContacts>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .clearFilteredContacts();
+                                                          Provider.of<ProviderSearchMode>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setIsSearchMode(
+                                                                  false);
+                                                          setState(() {
+                                                            // filteredApps.clear();
+                                                            isSearchMode =
+                                                                false;
+                                                            _searchController
+                                                                .clear();
+                                                            FocusScope.of(
+                                                                    context)
+                                                                .unfocus();
+                                                          });
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                        width: size.width - 20,
+                                                        height: 60,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                          border: Border.all(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                      0.4)),
+                                                        ),
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                horizontal: 10,
+                                                                vertical: 5),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(Icons.person,
+                                                                color: Colors
+                                                                    .white),
+                                                            SizedBox(width: 10),
+                                                            Expanded(
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  Text(
+                                                                      prov
+                                                                          .getFiltered[
+                                                                              index]
+                                                                          .displayName,
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              Colors.white)),
+                                                                  Text(
+                                                                      prov
+                                                                          .getFiltered[
+                                                                              index]
+                                                                          .phones
+                                                                          .first
+                                                                          .value,
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              Colors.white)),
+                                                                ],
+                                                              ),
+                                                            )
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                        childCount: prov
+                                                            .getFiltered
+                                                            .take(10)
+                                                            .length),
+                                                itemExtent: 70),
+                                      )
+                                    ],
                                   ),
                           ),
                         ),
@@ -789,47 +948,30 @@ class _MainScreenState extends State<MainScreen> {
                                         LauncherAssist.searchGoogle(query);
                                       }
                                     },
-                                    onChanged: (String query) {
-                                      //If have permission
-                                      // Permission.contacts.isGranted
-                                      //     .then((permitted) {
-                                      //   if (permitted) {
-                                      //     ContactsService.getContacts(
-                                      //             query: query)
-                                      //         .then((list) {
-                                      //       filteredApps = allApps
-                                      //           .where((element) => element
-                                      //               .label
-                                      //               .toLowerCase()
-                                      //               .contains(
-                                      //                   query.toLowerCase()))
-                                      //           .toList();
-
-                                      //       list.forEach((element) {
-                                      //         filteredApps.add(AppInfo(
-                                      //             "",
-                                      //             element.displayName,
-                                      //             element.avatar));
-                                      //       });
-                                      //       setState(() {});
-                                      //     });
-                                      //   } else {
-                                      //     setState(() {
-                                      //       filteredApps = allApps
-                                      //           .where((element) => element
-                                      //               .label
-                                      //               .toLowerCase()
-                                      //               .contains(
-                                      //                   query.toLowerCase()))
-                                      //           .toList();
-                                      //     });
-                                      //   }
-                                      // });
-                                      if (query == "")
+                                    onChanged: (String query) async {
+                                      if (query == "") {
                                         Provider.of<ProviderSearchApps>(context,
                                                 listen: false)
                                             .addApps(Global.recentApps);
-                                      else
+                                        Provider.of<ProviderSearchContacts>(
+                                                context,
+                                                listen: false)
+                                            .clearFilteredContacts();
+                                      } else {
+                                        bool isGranted =
+                                            await Permission.contacts.isGranted;
+                                        if (isGranted) {
+                                          Iterable<Contact> contacts =
+                                              await ContactsService.getContacts(
+                                                  withThumbnails: false,
+                                                  query: query);
+
+                                          Provider.of<ProviderSearchContacts>(
+                                                  context,
+                                                  listen: false)
+                                              .addAppsList(contacts.toList());
+                                        }
+
                                         Provider.of<ProviderSearchApps>(context,
                                                 listen: false)
                                             .addAppsList(allApps
@@ -840,14 +982,7 @@ class _MainScreenState extends State<MainScreen> {
                                                         query.toLowerCase()))
                                                 .take(12)
                                                 .toList());
-                                      // setState(() {
-                                      //   filteredApps = allApps
-                                      //       .where((element) => element.label
-                                      //           .toLowerCase()
-                                      //           .contains(query.toLowerCase()))
-                                      //       .toList();
-                                      //   //TODO Add contacts
-                                      // });
+                                      }
                                     },
                                     controller: _searchController,
                                     onTap: () {
@@ -937,7 +1072,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   swapPlaces(int dragginIndex, int index) {
-    List<AppInfo> newList = List();
+    List<AppInfo> newList = [];
     for (int i = 0; i < mainApps.length; i++) {
       if (i == index)
         newList.add(mainApps[dragginIndex]);
