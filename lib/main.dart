@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
@@ -28,6 +29,8 @@ void main() async {
   // SharedPreferences prefs = await SharedPreferences.getInstance();
   // List<String> hiddenApps = prefs.getStringList('hiddenapps') ?? List();
   // log("HIDDEN APPS ARE ${hiddenApps.length}");
+  //devhelp is product id
+  InAppPurchaseConnection.enablePendingPurchases();
   runApp(MyApp(
       // hiddenapps: hiddenApps,
       ));

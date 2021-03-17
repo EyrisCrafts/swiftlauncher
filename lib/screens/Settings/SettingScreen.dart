@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:swiftlauncher/Global.dart';
 import 'package:swiftlauncher/Providers/ProviderSettings.dart';
@@ -75,6 +78,25 @@ class _SettingScreenState extends State<SettingScreen> {
                       MaterialPageRoute(builder: (context) => SettingSearch()));
                 },
                 title: Text("SwiftSearch"),
+                trailing: Icon(Icons.chevron_right),
+              ),
+              ListTile(
+                onTap: () async {
+                  //TODO Buy the subscription
+                  Set<String> ids = Set.from(['devhelp']);
+                  ProductDetailsResponse resp = await InAppPurchaseConnection
+                      .instance
+                      .queryProductDetails(ids);
+
+                  log("Resonses recieved");
+                  final PurchaseParam purchaseParam =
+                      PurchaseParam(productDetails: resp.productDetails.first);
+                  InAppPurchaseConnection.instance
+                      .buyNonConsumable(purchaseParam: purchaseParam);
+                },
+                subtitle:
+                    Text("Buy a small subscription and support the developer"),
+                title: Text("Support Developer"),
                 trailing: Icon(Icons.chevron_right),
               ),
             ],

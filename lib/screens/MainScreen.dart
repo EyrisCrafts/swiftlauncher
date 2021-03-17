@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:image/image.dart' as IMG;
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,6 +43,7 @@ List<String> hiddenApps;
 Directory dr;
 
 class _MainScreenState extends State<MainScreen> {
+  StreamSubscription<List<PurchaseDetails>> _subscription;
   var wallpaper;
   bool isSearchMode;
   List<AppInfo> mainApps;
@@ -60,6 +63,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    final Stream purchaseUpdates =
+        InAppPurchaseConnection.instance.purchaseUpdatedStream;
+    _subscription = purchaseUpdates.listen((purchases) {
+      // Just purchased
+      // _handlePurchaseUpdates(purchases);
+      log("was just purchased");
+    });
     currentPageIndex = 0;
     iconPack = Map();
     draggingFromDrawer = false;
@@ -147,6 +157,12 @@ class _MainScreenState extends State<MainScreen> {
       }
     });
     loadPrefs();
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 
   loadPrefs() async {
@@ -292,334 +308,281 @@ class _MainScreenState extends State<MainScreen> {
                 ? DecorationImage(
                     image: MemoryImage(wallpaper), fit: BoxFit.cover)
                 : null),
-        child: Listener(
-          onPointerDown: (details) {
-            // _pointerDownPosition = details.position;
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onLongPress: () {
+            if (!Provider.of<ProviderSearchMode>(context, listen: false)
+                .getIsSearchMode)
+              showDialog(
+                  context: context,
+                  builder: (context) => DialogLongPress(
+                        onLockScreenChange: () {
+                          //TODO Change Background
+                        },
+                        onHomeScreenChange: () async {
+                          LauncherAssist.setWallpaper(1, "path").then((value) {
+                            Navigator.pop(context);
+                            if (value != null)
+                              setState(() {
+                                log("Setting new wallpaper");
+                                wallpaper = value;
+                              });
+                          });
+                        },
+                      ));
           },
-          onPointerUp: (details) {
-            // log("pointer moved down");
-            // if (details.position.dy - _pointerDownPosition.dy > 50.0 &&
-            //     details.position.dx - _pointerDownPosition.dx < 100 &&
-            //     !isSearchMode &&
-            //     !drawerKey.currentState.isOpen &&
-            //     drawerKey.currentState.verticalPageController.) {
-            //   LauncherAssist.openNotificationShader();
-            // }
+          onTap: () {
+            if (isSearchMode) {
+              Provider.of<ProviderSearchApps>(context, listen: false)
+                  .clearFilteredApps();
+              Provider.of<ProviderSearchContacts>(context, listen: false)
+                  .clearFilteredContacts();
+              Provider.of<ProviderSearchMode>(context, listen: false)
+                  .setIsSearchMode(false);
+              setState(() {
+                // filteredApps.clear();
+                isSearchMode = false;
+                _searchController.clear();
+                FocusScope.of(context).unfocus();
+              });
+            }
           },
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onVerticalDragEnd: (details) {
-              log("dragging");
-              // drawerKey.currentState.onVerticalDragEnd(size, details);
-              //TODO Open notification
-              log("vel is ${details.primaryVelocity}");
-              //   if (details.primaryVelocity > 0) {
-              //     log("dragged down");
-              //   }
-            },
-            onVerticalDragUpdate: (details) {
-              drawerKey.currentState.onVerticalDragUpdate(size, details);
-            },
-            onPanUpdate: (details) {
-              log("Panning");
-            },
-            onLongPress: () {
-              log("long pressed");
-              if (!Provider.of<ProviderSearchMode>(context, listen: false)
-                  .getIsSearchMode)
-                showDialog(
-                    context: context,
-                    builder: (context) => DialogLongPress(
-                          onLockScreenChange: () {
-                            //TODO Change Background
-                            LauncherAssist.setWallpaper(2, "path")
-                                .then((value) {
-                              Navigator.pop(context);
-                              // if (value != null)
-                              //   setState(() {
-                              //     log("Setting new wallpaper");
-                              //     wallpaper = value;
-                              //   });
-                            });
-                          },
-                          onHomeScreenChange: () async {
-                            LauncherAssist.setWallpaper(1, "path")
-                                .then((value) {
-                              Navigator.pop(context);
-                              if (value != null)
-                                setState(() {
-                                  log("Setting new wallpaper");
-                                  wallpaper = value;
-                                });
-                            });
-                          },
-                        ));
-            },
-            onTap: () {
-              log("clicked me");
-              if (isSearchMode) {
-                Provider.of<ProviderSearchApps>(context, listen: false)
-                    .clearFilteredApps();
-                Provider.of<ProviderSearchContacts>(context, listen: false)
-                    .clearFilteredContacts();
-                Provider.of<ProviderSearchMode>(context, listen: false)
-                    .setIsSearchMode(false);
-                setState(() {
-                  // filteredApps.clear();
-                  isSearchMode = false;
-                  _searchController.clear();
-                  FocusScope.of(context).unfocus();
-                });
-              }
-            },
-            child: FutureBuilder<int>(
-                future: initialization,
-                builder: (context, snapshot) {
-                  if (snapshot == null || !snapshot.hasData) return Container();
-                  return AppDrawer(
-                    draggingApp: (index) {
-                      draggingFromDrawer = true;
-                      draggingAppIndex = index;
-                    },
-                    numberOfPages: numberOfPages,
-                    apps: drawerApps,
-                    key: drawerKey,
-                    syncApps: (List<AppInfo> aps) {
-                      log("drawers length ${aps.length} original length ${drawerApps.length}");
+          child: FutureBuilder<int>(
+              future: initialization,
+              builder: (context, snapshot) {
+                if (snapshot == null || !snapshot.hasData) return Container();
+                return AppDrawer(
+                  draggingApp: (index) {
+                    draggingFromDrawer = true;
+                    draggingAppIndex = index;
+                  },
+                  numberOfPages: numberOfPages,
+                  apps: drawerApps,
+                  key: drawerKey,
+                  syncApps: (List<AppInfo> aps) {
+                    log("drawers length ${aps.length} original length ${drawerApps.length}");
 
-                      this.drawerApps = aps;
-                    },
-                    child: Stack(
-                      children: [
-                        Scaffold(
-                          backgroundColor: Colors.transparent,
-                          body: SingleChildScrollView(
-                            physics: NeverScrollableScrollPhysics(),
-                            child: SafeArea(
-                              child: Container(
-                                height: size.height - 20,
-                                width: size.width,
-                                color: Colors.transparent,
-                                child: Column(
-                                  children: [
-                                    Opacity(
-                                      opacity: isRemoveAppVis ? 1 : 0,
-                                      child: Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withOpacity(0.4),
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        alignment: Alignment.center,
-                                        child: DragTarget<AppInfo>(
-                                            onAccept: (data) {
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      AppSettingDialog(
-                                                          onAppSetting: () {
-                                                        Navigator.pop(context);
-                                                        LauncherAssist.launchAppSetting(
-                                                            draggingFromDrawer
-                                                                ? drawerApps[
-                                                                    draggingAppIndex]
-                                                                : mainApps[
-                                                                    draggingAppIndex]);
-                                                      }, onRemoveIcon: () {
-                                                        Navigator.pop(context);
-                                                        if (!draggingFromDrawer)
-                                                          setState(() {
-                                                            mainApps.removeAt(
-                                                                draggingAppIndex);
-                                                            mainApps.insert(
-                                                                draggingAppIndex,
-                                                                null);
-                                                            ProviderPreferences
-                                                                .saveMainApps(
-                                                                    mainApps);
-                                                          });
-                                                      }, onAppUninstall: () {
-                                                        Navigator.pop(context);
-                                                        LauncherAssist.uninstallApp(
-                                                            draggingFromDrawer
-                                                                ? drawerApps[
-                                                                        draggingAppIndex]
-                                                                    .package
-                                                                : mainApps[
-                                                                        draggingAppIndex]
-                                                                    .package);
-                                                      }));
-                                            },
-                                            builder:
-                                                (context, candidates, rejs) =>
-                                                    Icon(
-                                                      Icons.settings,
-                                                      color: Colors.white,
-                                                    )),
-                                      ),
-                                    ),
-                                    Consumer<ProviderSettings>(
-                                      builder: (context, value, child) =>
-                                          value.getSearchPosition ==
-                                                  SearchPosition.TOP
-                                              ? buildSearchBar(size, true)
-                                              : Container(),
-                                    ),
-                                    Listener(
-                                      onPointerDown: (details) {
-                                        _pointerDownPosition = details.position;
-                                      },
-                                      onPointerUp: (details) {
-                                        // log("pointer moved down");
-                                        if (details.position.dy -
-                                                    _pointerDownPosition.dy >
-                                                50.0 &&
-                                            details.position.dx -
-                                                    _pointerDownPosition.dx <
-                                                100 &&
-                                            !isSearchMode &&
-                                            !drawerKey.currentState.isOpen) {
-                                          LauncherAssist
-                                              .openNotificationShader();
-                                        }
-                                      },
-                                      child: Container(
-                                        height: size.height - 50 - 240,
-                                        margin: EdgeInsets.only(top: 40),
-                                        width: size.width,
-                                        child: PageView.builder(
-                                            controller: _pageController,
-                                            onPageChanged: (newIndex) {
-                                              log("current Page $newIndex");
-                                              // setState(() {
-                                              //   currentPageIndex = newIndex;
-                                              // });
-                                            },
-                                            itemCount: 3,
-                                            itemBuilder: (context, pageIndex) =>
-                                                Consumer<ProviderSettings>(
-                                                  builder:
-                                                      (context, value, child) =>
-                                                          AppGridPage(
-                                                    apps: mainApps
-                                                        .getRange(
-                                                            (pageIndex * 16) +
-                                                                4,
-                                                            ((pageIndex + 1) *
-                                                                    16) +
-                                                                4)
-                                                        .toList(),
-                                                    onDragStarted: (int index) {
-                                                      int actualIndex =
-                                                          (pageIndex * 16) +
-                                                              index +
-                                                              4;
-
-                                                      if (draggingFromDrawer)
-                                                        draggingFromDrawer =
-                                                            false;
-                                                      setState(() {
-                                                        isRemoveAppVis = true;
-                                                      });
-                                                      draggingAppIndex =
-                                                          actualIndex;
-                                                      log("Started Drag from $draggingAppIndex");
-                                                    },
-                                                    onDragEnded: (int index) {
-                                                      setState(() {
-                                                        isRemoveAppVis = false;
-                                                      });
-                                                    },
-                                                    onAccepted: (int index,
-                                                        AppInfo app) {
-                                                      int actualIndex =
-                                                          (pageIndex * 16) +
-                                                              index +
-                                                              4;
-
-                                                      log("lookng for acceptance. total size, ${drawerApps.length}");
-                                                      if (draggingFromDrawer) {
-                                                        log("dragged from drawer");
-                                                      }
-                                                      if (drawerApps[
-                                                              draggingAppIndex] !=
-                                                          null) {
-                                                        log("not null in drawer list");
-                                                      }
-                                                      if (mainApps[
-                                                                  actualIndex] ==
-                                                              null &&
-                                                          !draggingFromDrawer) {
-                                                        swapPlaces(
-                                                            draggingAppIndex,
-                                                            actualIndex);
-                                                        setState(() {});
-                                                      } else if (mainApps[
-                                                                  actualIndex] ==
-                                                              null &&
-                                                          draggingFromDrawer &&
-                                                          drawerApps[
-                                                                  draggingAppIndex] !=
-                                                              null) {
-                                                        //coming from drawer
-                                                        //TODO Update the drawer apps list arrangement
+                    this.drawerApps = aps;
+                  },
+                  child: Stack(
+                    children: [
+                      Scaffold(
+                        backgroundColor: Colors.transparent,
+                        body: SingleChildScrollView(
+                          physics: NeverScrollableScrollPhysics(),
+                          child: SafeArea(
+                            child: Container(
+                              height: size.height - 20,
+                              width: size.width,
+                              color: Colors.transparent,
+                              child: Column(
+                                children: [
+                                  Opacity(
+                                    opacity: isRemoveAppVis ? 1 : 0,
+                                    child: Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.4),
+                                          borderRadius:
+                                              BorderRadius.circular(10)),
+                                      alignment: Alignment.center,
+                                      child: DragTarget<AppInfo>(
+                                          onAccept: (data) {
+                                            showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    AppSettingDialog(
+                                                        onAppSetting: () {
+                                                      Navigator.pop(context);
+                                                      LauncherAssist.launchAppSetting(
+                                                          draggingFromDrawer
+                                                              ? drawerApps[
+                                                                  draggingAppIndex]
+                                                              : mainApps[
+                                                                  draggingAppIndex]);
+                                                    }, onRemoveIcon: () {
+                                                      Navigator.pop(context);
+                                                      if (!draggingFromDrawer)
                                                         setState(() {
-                                                          mainApps[
-                                                                  actualIndex] =
-                                                              app;
+                                                          mainApps.removeAt(
+                                                              draggingAppIndex);
+                                                          mainApps.insert(
+                                                              draggingAppIndex,
+                                                              null);
                                                           ProviderPreferences
                                                               .saveMainApps(
                                                                   mainApps);
                                                         });
-                                                      }
-                                                    },
-                                                    isSubTitle:
-                                                        value.getHomeGridText,
-                                                  ),
-                                                )),
+                                                    }, onAppUninstall: () {
+                                                      Navigator.pop(context);
+                                                      LauncherAssist.uninstallApp(
+                                                          draggingFromDrawer
+                                                              ? drawerApps[
+                                                                      draggingAppIndex]
+                                                                  .package
+                                                              : mainApps[
+                                                                      draggingAppIndex]
+                                                                  .package);
+                                                    }));
+                                          },
+                                          builder:
+                                              (context, candidates, rejs) =>
+                                                  Icon(
+                                                    Icons.settings,
+                                                    color: Colors.white,
+                                                  )),
+                                    ),
+                                  ),
+                                  Consumer<ProviderSettings>(
+                                    builder: (context, value, child) =>
+                                        value.getSearchPosition ==
+                                                SearchPosition.TOP
+                                            ? buildSearchBar(size, true)
+                                            : Container(),
+                                  ),
+                                  Listener(
+                                    onPointerDown: (details) {
+                                      _pointerDownPosition = details.position;
+                                    },
+                                    onPointerUp: (details) {
+                                      //Notification Shader
+                                      if (details.position.dy -
+                                                  _pointerDownPosition.dy >
+                                              50.0 &&
+                                          details.position.dx -
+                                                  _pointerDownPosition.dx <
+                                              100 &&
+                                          !isSearchMode &&
+                                          !drawerKey.currentState.isOpen) {
+                                        LauncherAssist.openNotificationShader();
+                                      }
+                                    },
+                                    child: Container(
+                                      height: size.height - 50 - 240,
+                                      margin: EdgeInsets.only(top: 40),
+                                      width: size.width,
+                                      child: PageView.builder(
+                                          controller: _pageController,
+                                          itemCount: 3,
+                                          itemBuilder: (context, pageIndex) =>
+                                              Consumer<ProviderSettings>(
+                                                builder:
+                                                    (context, value, child) =>
+                                                        AppGridPage(
+                                                  apps: mainApps
+                                                      .getRange(
+                                                          (pageIndex * 16) + 4,
+                                                          ((pageIndex + 1) *
+                                                                  16) +
+                                                              4)
+                                                      .toList(),
+                                                  onDragStarted: (int index) {
+                                                    int actualIndex =
+                                                        (pageIndex * 16) +
+                                                            index +
+                                                            4;
+
+                                                    if (draggingFromDrawer)
+                                                      draggingFromDrawer =
+                                                          false;
+                                                    setState(() {
+                                                      isRemoveAppVis = true;
+                                                    });
+                                                    draggingAppIndex =
+                                                        actualIndex;
+                                                    log("Started Drag from $draggingAppIndex");
+                                                  },
+                                                  onDragEnded: (int index) {
+                                                    setState(() {
+                                                      isRemoveAppVis = false;
+                                                    });
+                                                  },
+                                                  onAccepted:
+                                                      (int index, AppInfo app) {
+                                                    int actualIndex =
+                                                        (pageIndex * 16) +
+                                                            index +
+                                                            4;
+
+                                                    log("lookng for acceptance. total size, ${drawerApps.length}");
+                                                    if (draggingFromDrawer) {
+                                                      log("dragged from drawer");
+                                                    }
+                                                    if (drawerApps[
+                                                            draggingAppIndex] !=
+                                                        null) {
+                                                      log("not null in drawer list");
+                                                    }
+                                                    if (mainApps[actualIndex] ==
+                                                            null &&
+                                                        !draggingFromDrawer) {
+                                                      swapPlaces(
+                                                          draggingAppIndex,
+                                                          actualIndex);
+                                                      setState(() {});
+                                                    } else if (mainApps[
+                                                                actualIndex] ==
+                                                            null &&
+                                                        draggingFromDrawer &&
+                                                        drawerApps[
+                                                                draggingAppIndex] !=
+                                                            null) {
+                                                      //coming from drawer
+                                                      //TODO Update the drawer apps list arrangement
+                                                      setState(() {
+                                                        mainApps[actualIndex] =
+                                                            app;
+                                                        ProviderPreferences
+                                                            .saveMainApps(
+                                                                mainApps);
+                                                      });
+                                                    }
+                                                  },
+                                                  isSubTitle:
+                                                      value.getHomeGridText,
+                                                ),
+                                              )),
+                                    ),
+                                  ),
+                                  Consumer<ProviderSettings>(
+                                    builder: (context, value, child) =>
+                                        Container(
+                                      height: (160 -
+                                              (value.getSearchPosition ==
+                                                      SearchPosition.TOP
+                                                  ? 80
+                                                  : 0))
+                                          .toDouble(),
+                                      width: size.width,
+                                      alignment: Alignment.center,
+                                      child: Column(
+                                        children: [
+                                          if (value.getSearchPosition ==
+                                              SearchPosition.BOTTOM)
+                                            buildSearchBar(size, false),
+                                          buildMainApps(),
+                                        ],
                                       ),
                                     ),
-                                    Consumer<ProviderSettings>(
-                                      builder: (context, value, child) =>
-                                          Container(
-                                        height: (160 -
-                                                (value.getSearchPosition ==
-                                                        SearchPosition.TOP
-                                                    ? 80
-                                                    : 0))
-                                            .toDouble(),
-                                        width: size.width,
-                                        alignment: Alignment.center,
-                                        child: Column(
-                                          children: [
-                                            if (value.getSearchPosition ==
-                                                SearchPosition.BOTTOM)
-                                              buildSearchBar(size, false),
-                                            buildMainApps(),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
+                                  )
+                                ],
                               ),
                             ),
                           ),
                         ),
-                        Consumer<ProviderSettings>(
-                            builder: (context, value, child) {
-                          if (value.getIsSearchEnable)
-                            return buildSearchOverlay(
-                                size, context, value.getSearchPosition);
-                          return Container();
-                        })
-                      ],
-                    ),
-                  );
-                }),
-          ),
+                      ),
+                      Consumer<ProviderSettings>(
+                          builder: (context, value, child) {
+                        if (value.getIsSearchEnable)
+                          return buildSearchOverlay(
+                              size, context, value.getSearchPosition);
+                        return Container();
+                      })
+                    ],
+                  ),
+                );
+              }),
         ),
       ),
     );
