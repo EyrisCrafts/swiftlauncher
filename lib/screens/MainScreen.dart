@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swiftlauncher/Interfaces/DrawerSync.dart';
 import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
+import 'package:swiftlauncher/Providers/ProviderPageViewIssue.dart';
 import 'package:swiftlauncher/Providers/ProviderPreferences.dart';
 import 'package:swiftlauncher/Providers/ProviderSearchApps.dart';
 import 'package:swiftlauncher/Providers/ProviderSearchContacts.dart';
@@ -56,6 +57,7 @@ class _MainScreenState extends State<MainScreen> {
   int numberOfPages;
   List<AppInfo> drawerApps;
   bool draggingFromDrawer;
+  bool draggingFromHomeScreen;
   Future<int> initialization;
   int currentPageIndex;
   PageController _pageController;
@@ -73,6 +75,7 @@ class _MainScreenState extends State<MainScreen> {
     currentPageIndex = 0;
     iconPack = Map();
     draggingFromDrawer = false;
+    draggingFromHomeScreen = false;
     _searchController = TextEditingController();
     _searchFocus = FocusNode();
     drawerKey = GlobalKey<AppDrawerState>();
@@ -179,9 +182,9 @@ class _MainScreenState extends State<MainScreen> {
   loadDrawerSettings() {
     //TODO Load from prefs
 
-    numberOfPages = (allApps.length / 20).ceil();
+    numberOfPages = (allApps.length / Global.numberOfDrawerApps).ceil();
     drawerApps.addAll(allApps);
-    int diff = (numberOfPages * 20) - drawerApps.length;
+    int diff = (numberOfPages * Global.numberOfDrawerApps) - drawerApps.length;
     for (int i = 0; i < diff; i++) {
       drawerApps.add(null);
     }
@@ -312,7 +315,9 @@ class _MainScreenState extends State<MainScreen> {
           behavior: HitTestBehavior.translucent,
           onLongPress: () {
             if (!Provider.of<ProviderSearchMode>(context, listen: false)
-                .getIsSearchMode)
+                    .getIsSearchMode &&
+                !Provider.of<ProviderPageViewIssue>(context, listen: false)
+                    .getIsDrawerOpen)
               showDialog(
                   context: context,
                   builder: (context) => DialogLongPress(
@@ -454,7 +459,13 @@ class _MainScreenState extends State<MainScreen> {
                                                   _pointerDownPosition.dx <
                                               100 &&
                                           !isSearchMode &&
-                                          !drawerKey.currentState.isOpen) {
+                                          !Provider.of<ProviderPageViewIssue>(
+                                                  context,
+                                                  listen: false)
+                                              .getIsDrawerOpen &&
+                                          !draggingFromHomeScreen &&
+                                          !draggingFromDrawer) {
+                                        //TODO If dragging an app, don't open shader
                                         LauncherAssist.openNotificationShader();
                                       }
                                     },
@@ -472,20 +483,27 @@ class _MainScreenState extends State<MainScreen> {
                                                         AppGridPage(
                                                   apps: mainApps
                                                       .getRange(
-                                                          (pageIndex * 16) + 4,
+                                                          (pageIndex *
+                                                                  Global
+                                                                      .numberOfHomeApps) +
+                                                              4,
                                                           ((pageIndex + 1) *
-                                                                  16) +
+                                                                  Global
+                                                                      .numberOfHomeApps) +
                                                               4)
                                                       .toList(),
                                                   onDragStarted: (int index) {
-                                                    int actualIndex =
-                                                        (pageIndex * 16) +
-                                                            index +
-                                                            4;
-
+                                                    int actualIndex = (pageIndex *
+                                                            Global
+                                                                .numberOfHomeApps) +
+                                                        index +
+                                                        4;
+                                                    draggingFromHomeScreen =
+                                                        true;
                                                     if (draggingFromDrawer)
                                                       draggingFromDrawer =
                                                           false;
+
                                                     setState(() {
                                                       isRemoveAppVis = true;
                                                     });
@@ -494,16 +512,19 @@ class _MainScreenState extends State<MainScreen> {
                                                     log("Started Drag from $draggingAppIndex");
                                                   },
                                                   onDragEnded: (int index) {
+                                                    draggingFromHomeScreen =
+                                                        false;
                                                     setState(() {
                                                       isRemoveAppVis = false;
                                                     });
                                                   },
                                                   onAccepted:
                                                       (int index, AppInfo app) {
-                                                    int actualIndex =
-                                                        (pageIndex * 16) +
-                                                            index +
-                                                            4;
+                                                    int actualIndex = (pageIndex *
+                                                            Global
+                                                                .numberOfHomeApps) +
+                                                        index +
+                                                        4;
 
                                                     log("lookng for acceptance. total size, ${drawerApps.length}");
                                                     if (draggingFromDrawer) {
@@ -768,6 +789,63 @@ class _MainScreenState extends State<MainScreen> {
                                                 delegate:
                                                     SliverChildBuilderDelegate(
                                                         (context, index) {
+                                                  if (prov.getFiltered.length ==
+                                                          1 &&
+                                                      prov.getFiltered[0]
+                                                              .displayName ==
+                                                          "NULL") {
+                                                    return Container(
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          Permission.contacts
+                                                              .request();
+                                                        },
+                                                        child: Container(
+                                                          width:
+                                                              size.width - 20,
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(
+                                                                Icons.person,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                              Expanded(
+                                                                child: Text(
+                                                                    "Search in Contacts",
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white)),
+                                                              )
+                                                            ],
+                                                          ),
+                                                          height: 60,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10),
+                                                            border: Border.all(
+                                                                color: Colors
+                                                                    .white
+                                                                    .withOpacity(
+                                                                        0.4)),
+                                                          ),
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      10,
+                                                                  vertical: 5),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
                                                   return Container(
                                                     alignment: Alignment.center,
                                                     child: GestureDetector(
@@ -933,6 +1011,13 @@ class _MainScreenState extends State<MainScreen> {
                                                   context,
                                                   listen: false)
                                               .addAppsList(contacts.toList());
+                                        } else {
+                                          Provider.of<ProviderSearchContacts>(
+                                                  context,
+                                                  listen: false)
+                                              .addAppsList([
+                                            Contact(displayName: 'NULL')
+                                          ]);
                                         }
 
                                         Provider.of<ProviderSearchApps>(context,

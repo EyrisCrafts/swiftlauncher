@@ -92,7 +92,7 @@ class AppDrawerState extends State<AppDrawer> {
 
     isDragMode = false;
     draggingIndex = 0;
-    _pageController = PageController(viewportFraction: 0.99);
+    _pageController = PageController();
     // currentPageIndex = 0;
     numberOfPages = widget.numberOfPages;
     isOpen = false;
@@ -154,70 +154,70 @@ class AppDrawerState extends State<AppDrawer> {
     });
   }
 
-  onVerticalDragEnd(Size size, DragEndDetails details) {
-    bool hasChanged = isOpen;
-    if (!isOpen && (details.velocity.pixelsPerSecond.dy > 500)) {
-      log("Velocity is ${details.velocity.pixelsPerSecond.dy}");
-      LauncherAssist.openNotificationShader();
-    }
-    if (!isOpen && (-details.velocity.pixelsPerSecond.dy > 500)) {
-      isOpen = true;
-      animationEnded = true;
+  // onVerticalDragEnd(Size size, DragEndDetails details) {
+  //   bool hasChanged = isOpen;
+  //   if (!isOpen && (details.velocity.pixelsPerSecond.dy > 500)) {
+  //     log("Velocity is ${details.velocity.pixelsPerSecond.dy}");
+  //     LauncherAssist.openNotificationShader();
+  //   }
+  //   if (!isOpen && (-details.velocity.pixelsPerSecond.dy > 500)) {
+  //     isOpen = true;
+  //     animationEnded = true;
 
-      Provider.of<DrawerHeightProvider>(context, listen: false)
-          .setUpdateHeight(-size.height, 100);
-    } else if (isOpen && (details.velocity.pixelsPerSecond.dy > 500)) {
-      isOpen = false;
-      animationEnded = true;
+  //     Provider.of<DrawerHeightProvider>(context, listen: false)
+  //         .setUpdateHeight(-size.height, 100);
+  //   } else if (isOpen && (details.velocity.pixelsPerSecond.dy > 500)) {
+  //     isOpen = false;
+  //     animationEnded = true;
 
-      Provider.of<DrawerHeightProvider>(context, listen: false)
-          .setUpdateHeight(0, 100);
-    }
-    if (hasChanged != isOpen) return;
-    //Regular drag
-    if (!isOpen) {
-      if (-Provider.of<DrawerHeightProvider>(context, listen: false)
-              .getCustomHeight <
-          (size.height / 2)) {
-        animationEnded = true;
-        Provider.of<DrawerHeightProvider>(context, listen: false)
-            .setUpdateHeight(0, 300);
-      } else {
-        isOpen = true;
-        animationEnded = true;
-        Provider.of<DrawerHeightProvider>(context, listen: false)
-            .setUpdateHeightS(-size.height);
-      }
-    } else {
-      if (-Provider.of<DrawerHeightProvider>(context, listen: false)
-              .customHeight <
-          (size.height / 2)) {
-        animationEnded = true;
-        isOpen = false;
-        Provider.of<DrawerHeightProvider>(context, listen: false)
-            .setUpdateHeight(0, 300);
-      } else {
-        animationEnded = true;
-        Provider.of<DrawerHeightProvider>(context, listen: false)
-            .setUpdateHeightS(-size.height);
-      }
-    }
-  }
+  //     Provider.of<DrawerHeightProvider>(context, listen: false)
+  //         .setUpdateHeight(0, 100);
+  //   }
+  //   if (hasChanged != isOpen) return;
+  //   //Regular drag
+  //   if (!isOpen) {
+  //     if (-Provider.of<DrawerHeightProvider>(context, listen: false)
+  //             .getCustomHeight <
+  //         (size.height / 2)) {
+  //       animationEnded = true;
+  //       Provider.of<DrawerHeightProvider>(context, listen: false)
+  //           .setUpdateHeight(0, 300);
+  //     } else {
+  //       isOpen = true;
+  //       animationEnded = true;
+  //       Provider.of<DrawerHeightProvider>(context, listen: false)
+  //           .setUpdateHeightS(-size.height);
+  //     }
+  //   } else {
+  //     if (-Provider.of<DrawerHeightProvider>(context, listen: false)
+  //             .customHeight <
+  //         (size.height / 2)) {
+  //       animationEnded = true;
+  //       isOpen = false;
+  //       Provider.of<DrawerHeightProvider>(context, listen: false)
+  //           .setUpdateHeight(0, 300);
+  //     } else {
+  //       animationEnded = true;
+  //       Provider.of<DrawerHeightProvider>(context, listen: false)
+  //           .setUpdateHeightS(-size.height);
+  //     }
+  //   }
+  // }
 
-  onVerticalDragUpdate(Size size, DragUpdateDetails details) {
-    if (isOpen &&
-        (-details.delta.dy -
-                Provider.of<DrawerHeightProvider>(context, listen: false)
-                    .customHeight >
-            size.height)) return;
-    if (animationEnded) {
-      Provider.of<DrawerHeightProvider>(context, listen: false)
-          .setUpdateHeightRR(details.delta.dy, 0);
-    } else {
-      Provider.of<DrawerHeightProvider>(context, listen: false)
-          .setUpdateHeightR(details.delta.dy);
-    }
-  }
+  // onVerticalDragUpdate(Size size, DragUpdateDetails details) {
+  //   if (isOpen &&
+  //       (-details.delta.dy -
+  //               Provider.of<DrawerHeightProvider>(context, listen: false)
+  //                   .customHeight >
+  //           size.height)) return;
+  //   if (animationEnded) {
+  //     Provider.of<DrawerHeightProvider>(context, listen: false)
+  //         .setUpdateHeightRR(details.delta.dy, 0);
+  //   } else {
+  //     Provider.of<DrawerHeightProvider>(context, listen: false)
+  //         .setUpdateHeightR(details.delta.dy);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -415,8 +415,9 @@ class AppDrawerState extends State<AppDrawer> {
                                   case 2:
                                     setState(() {
                                       numberOfPages++;
-                                      drawerApps.addAll(
-                                          List.generate(20, (index) => null));
+                                      drawerApps.addAll(List.generate(
+                                          Global.numberOfDrawerApps,
+                                          (index) => null));
                                       widget.syncApps(drawerApps);
                                       log("added page");
                                     });
@@ -428,7 +429,9 @@ class AppDrawerState extends State<AppDrawer> {
                                       int pg = _pageController.page.toInt();
                                       setState(() {
                                         drawerApps.removeRange(
-                                            pg * 20, (pg * 20) + 20);
+                                            pg * Global.numberOfDrawerApps,
+                                            (pg * Global.numberOfDrawerApps) +
+                                                Global.numberOfDrawerApps);
                                         numberOfPages--;
                                         widget.syncApps(drawerApps);
                                       });
@@ -477,88 +480,89 @@ class AppDrawerState extends State<AppDrawer> {
               controller: _pageController,
               onPageChanged: (newIndex) {
                 log("current Page $newIndex");
+
                 Provider.of<DrawerChangeProvider>(context, listen: false)
                     .setCurrentPage = newIndex;
-                // setState(() {
-                //   currentPageIndex = newIndex;
-                // });
               },
               itemCount: numberOfPages,
-              itemBuilder: (context, pageIndex) => Consumer<ProviderHiddenApps>(
-                      builder: (fcontext, hiddenprovider, fchild) {
+              itemBuilder: (context, pageIndex) =>
+                  Consumer2<ProviderHiddenApps, ProviderSettings>(
+                      builder: (fcontext, hiddenprovider, value, fchild) {
                     log("rebuilding hidden apps");
-                    //TODO 1. Set to null instead of removing
-                    //TODO 2. In case the hidden is turned off, add to drawer app
 
                     // drawerApps.removeWhere((element) =>
                     //     element != null &&
                     //     hiddenprovider.getHiddenApps.contains(element.package));
-
+                    bool changeHappened = false;
                     for (int j = 0;
                         j < hiddenprovider.recentReAdd.length;
                         j++) {
                       for (int i = 0; i < drawerApps.length; i++) {
                         if (drawerApps[i] == null) {
                           drawerApps[i] = hiddenprovider.recentReAdd[j];
-
+                          changeHappened = true;
+                          log("Change happened");
                           break;
                         }
                       }
                     }
-                    Provider.of<ProviderHiddenApps>(context, listen: false)
-                        .removeRecentApp();
+                    if (changeHappened)
+                      Provider.of<ProviderHiddenApps>(context, listen: false)
+                          .removeRecentApp();
 
-                    for (int i = 0; i < drawerApps.length; i++) {
-                      if (drawerApps[i] != null &&
-                          hiddenprovider.getHiddenApps
-                              .contains(drawerApps[i].package)) {
-                        drawerApps[i] = null;
-                        break;
-                      }
-                    }
+                    // for (int i = 0; i < drawerApps.length; i++) {
+                    //   if (drawerApps[i] != null &&
+                    //       hiddenprovider.getHiddenApps
+                    //           .contains(drawerApps[i].package)) {
+                    //     drawerApps[i] = null;
+                    //     break;
+                    //   }
+                    // }
 
-                    return Consumer<ProviderSettings>(
-                      builder: (context, value, child) => AppGridPage(
-                        apps: drawerApps
-                            .getRange(
-                                pageIndex * 20,
-                                ((pageIndex + 1) * 20) > drawerApps.length
-                                    ? drawerApps.length - 1
-                                    : ((pageIndex + 1) * 20))
-                            .toList(),
-                        onDragStarted: (int index) {
-                          int actualIndex = (pageIndex * 20) + index;
-                          widget.draggingApp(actualIndex);
-                          draggingIndex = actualIndex;
-                          setState(() {
-                            isDragMode = true;
-                            // widget.isRemoveVis(true);
-                          });
+                    return AppGridPage(
+                      apps: drawerApps
+                          .getRange(
+                              pageIndex * Global.numberOfDrawerApps,
+                              ((pageIndex + 1) * Global.numberOfDrawerApps) >
+                                      drawerApps.length
+                                  ? drawerApps.length - 1
+                                  : ((pageIndex + 1) *
+                                      Global.numberOfDrawerApps))
+                          .toList(),
+                      onDragStarted: (int index) {
+                        int actualIndex =
+                            (pageIndex * Global.numberOfDrawerApps) + index;
+                        widget.draggingApp(actualIndex);
+                        draggingIndex = actualIndex;
+                        setState(() {
+                          isDragMode = true;
+                          // widget.isRemoveVis(true);
+                        });
 
-                          //inform main that you are dragging from drawer
-                        },
-                        onDragEnded: (int index) {
-                          log("Drag ended");
-                          setState(() {
-                            isDragMode = false;
-                            // widget.isRemoveVis(false);
-                          });
-                        },
-                        onAccepted: (int index, AppInfo app) {
-                          int actualIndex = (pageIndex * 20) + index;
-                          log("accepted at index $actualIndex }");
-                          if (drawerApps[actualIndex] == null) {
-                            log("swapping places $draggingIndex and $actualIndex");
-                            swapPlaces(draggingIndex, actualIndex);
-                            widget.syncApps(drawerApps);
-                            setState(() {});
-                          }
-                        },
-                        onAppOpening: () {
-                          closeDrawer();
-                        },
-                        isSubTitle: value.drawerAppTextVis,
-                      ),
+                        //inform main that you are dragging from drawer
+                      },
+                      onDragEnded: (int index) {
+                        log("Drag ended");
+                        setState(() {
+                          isDragMode = false;
+                          // widget.isRemoveVis(false);
+                        });
+                      },
+                      onAccepted: (int index, AppInfo app) {
+                        int actualIndex =
+                            (pageIndex * Global.numberOfDrawerApps) + index;
+                        log("accepted at index $actualIndex }");
+                        if (drawerApps[actualIndex] == null) {
+                          log("swapping places $draggingIndex and $actualIndex");
+                          swapPlaces(draggingIndex, actualIndex);
+                          widget.syncApps(drawerApps);
+                          setState(() {});
+                        }
+                      },
+                      onAppOpening: () {
+                        closeDrawer();
+                      },
+                      isSubTitle: value.drawerAppTextVis,
                     );
                   })),
         ),
@@ -567,42 +571,41 @@ class AppDrawerState extends State<AppDrawer> {
             width: size.width,
             alignment: Alignment.topCenter,
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                for (int i = 0; i < numberOfPages; i++)
-                  GestureDetector(
-                    onTap: () {
-                      _pageController.animateToPage(i,
-                          duration: Duration(milliseconds: 300),
-                          curve: Curves.easeIn);
-                    },
-                    child: Consumer<DrawerChangeProvider>(
-                      builder: (context, value, child) => DragTarget<AppInfo>(
-                        onWillAccept: (app) {
-                          if (_pageController.page.toInt() != i)
-                            _pageController.animateToPage(i,
-                                duration: Duration(milliseconds: 300),
-                                curve: Curves.easeIn);
-                          return true;
-                        },
-                        builder: (context, candidates, rejects) {
-                          return AnimatedContainer(
-                            height: 25,
-                            width: 25,
-                            duration: Duration(milliseconds: 2000),
-                            decoration: BoxDecoration(
-                                color: value.getCurrentPage == i
-                                    ? Colors.white
-                                    : Colors.white.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(30)),
-                          );
-                        },
-                      ),
-                    ),
-                  )
-              ],
-            ))
+            child: Consumer<DrawerChangeProvider>(
+                builder: (context, value, child) => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          for (int i = 0; i < numberOfPages; i++)
+                            GestureDetector(
+                              onTap: () {
+                                _pageController.animateToPage(i,
+                                    duration: Duration(milliseconds: 300),
+                                    curve: Curves.easeIn);
+                              },
+                              child: DragTarget<AppInfo>(
+                                onWillAccept: (app) {
+                                  if (_pageController.page.toInt() != i)
+                                    _pageController.animateToPage(i,
+                                        duration: Duration(milliseconds: 300),
+                                        curve: Curves.easeIn);
+                                  return true;
+                                },
+                                builder: (context, candidates, rejects) {
+                                  return AnimatedContainer(
+                                    height: 25,
+                                    width: 25,
+                                    duration: Duration(milliseconds: 2000),
+                                    decoration: BoxDecoration(
+                                        color: value.getCurrentPage == i
+                                            ? Colors.white
+                                            : Colors.white.withOpacity(0.4),
+                                        borderRadius:
+                                            BorderRadius.circular(30)),
+                                  );
+                                },
+                              ),
+                            ),
+                        ])))
       ],
     );
   }
@@ -611,10 +614,10 @@ class AppDrawerState extends State<AppDrawer> {
     int currentPage = _pageController.page.toInt();
     List<AppInfo> nlist = drawerApps
         .getRange(
-            currentPage * 20,
-            ((currentPage + 1) * 20) > drawerApps.length
+            currentPage * Global.numberOfDrawerApps,
+            ((currentPage + 1) * Global.numberOfDrawerApps) > drawerApps.length
                 ? drawerApps.length - 1
-                : ((currentPage + 1) * 20))
+                : ((currentPage + 1) * Global.numberOfDrawerApps))
         .toList();
     return nlist
         .map((e) => e == null)
@@ -622,7 +625,7 @@ class AppDrawerState extends State<AppDrawer> {
   }
 
   swapPlaces(int dragginIndex, int index) {
-    List<AppInfo> newList = List();
+    List<AppInfo> newList = [];
     for (int i = 0; i < drawerApps.length; i++) {
       if (i == index)
         newList.add(drawerApps[dragginIndex]);

@@ -83,7 +83,7 @@ class _SettingScreenState extends State<SettingScreen> {
               ListTile(
                 onTap: () async {
                   //TODO Buy the subscription
-                  Set<String> ids = Set.from(['devhelp']);
+                  Set<String> ids = Set.from(['support']);
                   ProductDetailsResponse resp = await InAppPurchaseConnection
                       .instance
                       .queryProductDetails(ids);
@@ -92,10 +92,12 @@ class _SettingScreenState extends State<SettingScreen> {
                   final PurchaseParam purchaseParam =
                       PurchaseParam(productDetails: resp.productDetails.first);
                   InAppPurchaseConnection.instance
-                      .buyNonConsumable(purchaseParam: purchaseParam);
+                      .buyNonConsumable(purchaseParam: purchaseParam)
+                      .then((value) {
+                    log("Value is $value");
+                  });
                 },
-                subtitle:
-                    Text("Buy a small subscription and support the developer"),
+                subtitle: Text("Like the launcher? Support the developer"),
                 title: Text("Support Developer"),
                 trailing: Icon(Icons.chevron_right),
               ),

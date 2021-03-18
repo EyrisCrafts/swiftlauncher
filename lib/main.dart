@@ -10,6 +10,7 @@ import 'package:swiftlauncher/Providers/DrawerHeightProvider.dart';
 import 'package:swiftlauncher/Providers/ProviderHiddenApps.dart';
 import 'package:swiftlauncher/screens/MainScreen.dart';
 
+import 'Global.dart';
 import 'Providers/ProviderDrawerApps.dart';
 import 'Providers/ProviderIconPack.dart';
 import 'Providers/ProviderPageViewIssue.dart';
@@ -26,6 +27,11 @@ void main() async {
   timeDilation = 0.3;
   Size phoneSize = window.physicalSize;
   log("PHoen size is ${phoneSize.aspectRatio} ${phoneSize.height}");
+  // Global.phoneSize = phoneSize.height;
+  if (phoneSize.height > 2000) {
+    Global.numberOfHomeApps = 20;
+    Global.numberOfDrawerApps = 24;
+  }
   // SharedPreferences prefs = await SharedPreferences.getInstance();
   // List<String> hiddenApps = prefs.getStringList('hiddenapps') ?? List();
   // log("HIDDEN APPS ARE ${hiddenApps.length}");

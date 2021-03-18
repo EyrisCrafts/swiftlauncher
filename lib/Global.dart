@@ -10,6 +10,9 @@ class Global {
   static bool isIconTextVis = true;
 
   static final Color themeColor = Color(0xff00cdcd);
+  static double phoneSize = 1000;
+  static int numberOfDrawerApps = 20;
+  static int numberOfHomeApps = 16;
 
   static final List<String> iconIntents = [
     "com.fede.launcher.THEME_ICONPACK",
