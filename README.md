@@ -1,16 +1,24 @@
 # swiftlauncher
 
-A new Flutter project.
+A feature rich Android launcher completely made in flutter.
 
-## Getting Started
+## Playstore link
 
-This project is a starting point for a Flutter application.
+[https://play.google.com/store/apps/details?id=com.eyriscrafts.swiftlauncher](https://play.google.com/store/apps/details?id=com.eyriscrafts.swiftlauncher)
 
-A few resources to get you started if this is your first Flutter project:
+## Current Features
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+1. IconPack Supported
+2. Drawer Rearrangement supported
+3. Swift Search, that can search on google / youtube / youtube vanced / playstore / contacts (if given permission)
+4. basic themes 
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+
+<img src = "images/im1.webp" width ="200" /> <img src = "images/im2.webp" width ="200" />
+<img src = "images/im3.webp" width ="200" /> <img src = "images/im4.webp" width ="200" />
+
+## Contributions are welcome :)
+
+
+
+
