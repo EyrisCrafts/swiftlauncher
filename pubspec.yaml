@@ -38,11 +38,11 @@ dependencies:
   file_picker: ^2.1.6
   filesystem_picker: ^1.0.3
   contacts_service: ^0.4.6
-  in_app_purchase: ^0.5.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.0
+  ffi: ^1.1.2
 
 flutter_icons:
   android: "launcher_icon"

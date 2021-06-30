@@ -21,7 +21,7 @@ packages:
       name: async
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.5.0"
+    version: "2.6.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -86,12 +86,12 @@ packages:
     source: hosted
     version: "1.2.0"
   ffi:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ffi
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.1.3"
+    version: "1.1.2"
   file:
     dependency: transitive
     description:
@@ -191,13 +191,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.6"
-  in_app_purchase:
-    dependency: "direct main"
-    description:
-      name: in_app_purchase
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.5.1"
   intent:
     dependency: "direct main"
     description:
@@ -219,13 +212,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.3"
-  json_annotation:
-    dependency: transitive
-    description:
-      name: json_annotation
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "4.0.0"
   matcher:
     dependency: transitive
     description:
@@ -302,7 +288,7 @@ packages:
       name: path_provider_windows
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.4+3"
+    version: "0.0.5"
   pedantic:
     dependency: transitive
     description:
@@ -407,7 +393,7 @@ packages:
       name: shared_preferences_windows
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.1+3"
+    version: "0.0.2+3"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -419,7 +405,7 @@ packages:
       name: source_span
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.8.0"
+    version: "1.8.1"
   stack_trace:
     dependency: transitive
     description:
@@ -454,7 +440,7 @@ packages:
       name: test_api
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.19"
+    version: "0.3.0"
   toggle_switch:
     dependency: "direct main"
     description:
@@ -482,7 +468,7 @@ packages:
       name: win32
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.7.4"
+    version: "2.2.4"
   xdg_directories:
     dependency: transitive
     description:
@@ -505,5 +491,5 @@ packages:
     source: hosted
     version: "3.1.0"
 sdks:
-  dart: ">=2.12.0-259.9.beta <3.0.0"
+  dart: ">=2.13.0 <3.0.0"
   flutter: ">=1.24.0-7.0"

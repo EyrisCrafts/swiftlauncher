@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swiftlauncher/Providers/AppThemeProvider.dart';
@@ -18,7 +17,6 @@ import 'Providers/ProviderSearchApps.dart';
 import 'Providers/ProviderSearchContacts.dart';
 import 'Providers/ProviderSearchMode.dart';
 import 'Providers/ProviderSettings.dart';
-// import 'package:launcher_assist/launcher_assist.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 import 'dart:ui';
 
@@ -27,27 +25,16 @@ void main() async {
   timeDilation = 0.3;
   Size phoneSize = window.physicalSize;
   log("PHoen size is ${phoneSize.aspectRatio} ${phoneSize.height}");
-  // Global.phoneSize = phoneSize.height;
   if (phoneSize.height > 2000) {
     Global.numberOfHomeApps = 20;
     Global.numberOfDrawerApps = 24;
   }
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-  // List<String> hiddenApps = prefs.getStringList('hiddenapps') ?? List();
-  // log("HIDDEN APPS ARE ${hiddenApps.length}");
+
   //devhelp is product id
-  InAppPurchaseConnection.enablePendingPurchases();
-  runApp(MyApp(
-      // hiddenapps: hiddenApps,
-      ));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-  // final List<String> hiddenapps;
-
-  // const MyApp({Key key, @required this.hiddenapps}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

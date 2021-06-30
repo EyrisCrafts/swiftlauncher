@@ -88,12 +88,7 @@ class _DraggableAppState extends State<DraggableApp> {
   }
 
   _buildDraggable() {
-    // log("Building draggable");
     return GestureDetector(
-      // onTap: () {
-      // log("opening app");
-      // LauncherAssist.launchApp(appInfo);
-      // },
       onTapDown: (details) {
         log("tap down details");
         if (!isVis && widget.isSwiftApp)

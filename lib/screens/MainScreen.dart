@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:image/image.dart' as IMG;
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,7 +43,6 @@ List<String> hiddenApps;
 Directory dr;
 
 class _MainScreenState extends State<MainScreen> {
-  StreamSubscription<List<PurchaseDetails>> _subscription;
   var wallpaper;
   bool isSearchMode;
   List<AppInfo> mainApps;
@@ -65,13 +63,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    final Stream purchaseUpdates =
-        InAppPurchaseConnection.instance.purchaseUpdatedStream;
-    _subscription = purchaseUpdates.listen((purchases) {
-      // Just purchased
-      // _handlePurchaseUpdates(purchases);
-      log("was just purchased");
-    });
+
     currentPageIndex = 0;
     iconPack = Map();
     draggingFromDrawer = false;
@@ -160,12 +152,6 @@ class _MainScreenState extends State<MainScreen> {
       }
     });
     loadPrefs();
-  }
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
   }
 
   loadPrefs() async {
